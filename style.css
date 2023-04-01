@@ -1,0 +1,22 @@
+body, 
+html,
+.game-container,
+.game-board {
+    height: 100%;
+}
+
+
+
+.board-grid {
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    border: 1px solid black;
+    gap: 1em;
+    background-color: blueviolet;
+}
+
+.cell {
+    background-color: aqua;
+}
