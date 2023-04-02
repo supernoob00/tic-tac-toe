@@ -4,7 +4,6 @@
 
     // a left diagonal looks like "/"
 
-
     const TOKENS = {
         EMPTY: "E",
         NAUGHT: "O",
@@ -17,10 +16,27 @@
         CROSS: document.createTextNode("X"),
     };
 
-    // useful generic functions for working with 2d arrays - functions never return matrix contents, only [rowIndex, colIndex] coordinates
-    // "pos" and "step" are always a [rowIndex, colIndex] coordinate
+    // useful generic functions for working with 2d arrays 
+    // contents of matrix is irrelevant; functions only work with row and column indices
+    // only valid for square arrays, could be used for any array shape with a little tweaking
+    // "pos" and "step" in parameters are always a [rowIndex, colIndex] coordinate
     const matrixFuncs = (function() {
-
+        const isInBounds = function(matrix, pos) {
+            const rowInBounds = (pos[0] >= 0) && (pos[0] < matrix.length);
+            const colInBounds = (pos[1] >= 0) && (pos[1] < matrix.length);
+            const isInBounds = rowInBounds && colInBounds;
+            return isInBounds;
+        };
+        // from a starting point, move with a given step coordinate, collecting coordinate of every cell that is landed on until boundary is reached
+        const traverseMatrix = function(matrix, startPos, step) {
+            let passedCells = [];
+            let currentPos = startPos;
+            while (isInBounds(matrix, currentPos)) {
+                passedCells.push(currentPos);
+                currentPos = [currentPos[0] + step[0], currentPos[1] + step[1]];
+            }
+            return passedCells;
+        };
         const rows = function(matrix) {
             const startingCol = traverseMatrix(matrix, [0,0], [1, 0]);
             const rows = startingCol.map(coordinate => traverseMatrix(matrix, coordinate, [0, 1]));
@@ -31,49 +47,32 @@
             const cols = startingRow.map(coordinate => traverseMatrix(matrix, coordinate, [1,0]));
             return cols;
         };
-        const leftDiags = function(matrix) {
+        const antiDiags = function(matrix) {
             const startingRow = rows(matrix)[0];
             const startingCol = cols(matrix)[matrix.length - 1].slice(1, matrix.length);
             const startingCells = startingRow.concat(startingCol);
-            const leftDiags = startingCells.map(coordinate => traverseMatrix(matrix, coordinate, [1, -1]));
-            return leftDiags;
+            const antiDiags = startingCells.map(coordinate => traverseMatrix(matrix, coordinate, [1, -1]));
+            return antiDiags;
         };
-        const rightDiags = function(matrix) {
+        const mainDiags = function(matrix) {
             const startingRow = rows(matrix)[0].reverse();
             const startingCol = cols(matrix)[0].slice(1, matrix.length);
             const startingCells = startingRow.concat(startingCol);
-            const rightDiags = startingCells.map(coordinate => traverseMatrix(matrix, coordinate, [1,1]));
-            return rightDiags;
-        };
-        // currently only valid for square matrices, could be adjusted easily for non-standard shapes
-        const isInBounds = function(matrix, pos) {
-            const rowInBounds = (pos[0] >= 0) && (pos[0] < matrix.length);
-            const colInBounds = (pos[1] >= 0) && (pos[1] < matrix.length);
-            const isInBounds = rowInBounds && colInBounds;
-            return isInBounds;
-        };
-        // from a starting point, keep stepping with a given coordinate, collecting position of every cell that is landed on
-        const traverseMatrix = function(matrix, startPos, step) {
-            let passedCells = [];
-            let currentPos = startPos;
-            while (isInBounds(matrix, currentPos)) {
-                passedCells.push(currentPos);
-                currentPos = [currentPos[0] + step[0], currentPos[1] + step[1]];
-            }
-            return passedCells;
+            const mainDiags = startingCells.map(coordinate => traverseMatrix(matrix, coordinate, [1,1]));
+            return mainDiags;
         };
 
         return {
                 rows,
                 cols,
-                leftDiags,
-                rightDiags,
+                antiDiags,
+                mainDiags,
                 isInBounds,
                 traverseMatrix,
         };
     })();
 
-    const cell = function(token, rowIndex, colIndex) {
+    const Cell = function(token, rowIndex, colIndex) {
         let _token = token;
         const _rowIndex = rowIndex;
         const _colIndex = colIndex;
@@ -97,13 +96,13 @@
             for (let rowIndex = 0; rowIndex < size; rowIndex++) {
                 let row = [];
                 for (let colIndex = 0; colIndex < size; colIndex++) {
-                    row.push(cell(TOKENS.EMPTY, rowIndex, colIndex));
+                    row.push(Cell(TOKENS.EMPTY, rowIndex, colIndex));
                 }
                 grid.push(row);
             }
             return grid;
         };
-        let _grid = _makeGrid(size);
+        const _grid = _makeGrid(size);
         const getGrid = () => _grid;
         const getCell = (rowIndex, colIndex) => _grid[rowIndex][colIndex];
         const clearGrid = function() {
@@ -114,22 +113,22 @@
                 }
             }
         };
+        // grid organized by rows (how _grid is already arranged)
         const getRows = () => _grid;
-        // 2d array organized by columns
+        // grid organized by columns
         const _cols = matrixFuncs.cols(_grid).map(col => col.map(pos => getCell(pos[0], pos[1])));
         const getCols = () => _cols;
-        // 2d array organized by diagonals
-        const _diags = matrixFuncs.leftDiags(_grid).map(diag => diag.map(pos => getCell(pos[0], pos[1])));
-        const getDiags = () => _diags;
-
-        const _antiDiags = matrixFuncs.rightDiags(_grid).map(antiDiag => antiDiag.map(pos => getCell(pos[0], pos[1])));
+        // grid organized by diagonals
+        const _antiDiags = matrixFuncs.antiDiags(_grid).map(antiDiag => antiDiag.map(pos => getCell(pos[0], pos[1])));
         const getAntiDiags = () => _antiDiags;
+        const _mainDiags = matrixFuncs.mainDiags(_grid).map(mainDiag => mainDiag.map(pos => getCell(pos[0], pos[1])));
+        const getMainDiags = () => _mainDiags;
 
         return {
             getGrid,
             getRows,
             getCols,
-            getDiags,
+            getMainDiags,
             getAntiDiags,
             getCell,
             clearGrid
@@ -137,18 +136,18 @@
     });
 
     const player = function(name, token) {
-        const getName = () => name;
-        const getPlayerToken = () => token;
+        const _playerName = name;
+        const _playerToken = token;
+        const getName = () => _playerName;
+        const getPlayerToken = () => _playerToken;
         const _record = {
             wins: 0,
             losses: 0,
             ties: 0,
         };
-        const winGame = function() {
-            _record.wins++;
-        }
+        const winGame = () => {_record.wins++};
         const getRecord = () => _record;
-        const setName = (newName) => name = newName;
+        const setName = (newName) => {name = newName};
 
         return {
             getName,
@@ -163,7 +162,9 @@
     const GameController = (function() {
         const countToWin = 3;
 
-        const board = Gameboard(3);
+        const gameBoard = Gameboard(3);
+
+        const getGameBoard = () => gameBoard;
 
         const Players = {
             playerOne: player("unknown", TOKENS.CROSS),
@@ -184,12 +185,11 @@
         }
 
         const isValidMove = function(rowIndex, colIndex) {
-            const isEmptyCell = Gameboard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY;
+            const isEmptyCell = gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY;
             return isEmptyCell;
         };
 
-        const isGameOver = (function() {
-            const isCellWinner = function(cell) {
+        const isCellWinner = function() {
                 if (cell.getToken() !== TOKENS.EMPTY) {
                 const token = cell.getToken();
                 const rowIndex = cell.getRowIndex();
@@ -202,12 +202,12 @@
                 // for right diagonals that value is rowIndex + colIndex
                 // for left diagonals that value is rowIndex + (lastColIndex - colIndex)
      
-                const leftDiagSum = rowIndex + colIndex;
-                const rightDiagSum = rowIndex + ((Gameboard.getGrid().length - 1) - colIndex);
+                const antiDiagSum = rowIndex + colIndex;
+                const mainDiagSum = rowIndex + ((Gameboard.getGrid().length - 1) - colIndex);
      
-                const isLeftDiagWinner = checkForCluster(Gameboard.getDiags()[leftDiagSum].map(cell => cell.getToken()), token);
-                const isRightDiagWinner = checkForCluster(Gameboard.getAntiDiags()[rightDiagSum].map(cell => cell.getToken()), token);
-                const isDiagWinner = isLeftDiagWinner || isRightDiagWinner;
+                const isAntiDiagWinner = checkForCluster(Gameboard.getDiags()[antiDiagSum].map(cell => cell.getToken()), token);
+                const isMainDiagWinner = checkForCluster(Gameboard.getAntiDiags()[mainDiagSum].map(cell => cell.getToken()), token);
+                const isDiagWinner = isAntiDiagWinner || isMainDiagWinner;
      
                 const isWinner = isRowWinner || isColWinner || isDiagWinner;
                 return isWinner;
@@ -215,21 +215,16 @@
                 else {
                     return false;
                 }
-            };
+        };
 
-            const isGameTied = function() {
+        const isGameTied = function() {
                 Gameboard.getGrid.flat(2).forEach(function(cell) {
                     if (cell.getToken() !== "TOKENS.EMPTY") {
                         return false;
                     }
                 });
                 return true;
-            };
-
-            return {
-
-            };
-        })();
+        };
 
         const switchActivePlayer = function() {
             if (activePlayer === Players["playerOne"]) {
@@ -240,25 +235,12 @@
             }
         };
 
-        const makeMove = function(activePlayer) {
-            const playerMove = getPlayerMove();
-            const chosenCell = Gameboard.getCell(playerMove[0], playerMove[1])
+        const makeMove = function(rowIndex, colIndex) {
+            console.log(`${activePlayer.getName()} put an ${activePlayer.getPlayerToken()} on square [${rowIndex}, ${colIndex}]`);
+            const chosenCell = gameBoard.getCell(rowIndex, colIndex);
             chosenCell.changeToken(activePlayer.getPlayerToken());
-            return chosenCell;
+            switchActivePlayer();
         };
-
-        const playGame = function() {
-            Players["playerOne"].setName(getPlayerNameChoice());
-            Players["playerTwo"].setName(getPlayerNameChoice());
-            while (true) {
-                const moveCell = makeMove(activePlayer);
-                printGameBoard();
-                if (lookForWinner(moveCell)) {
-                    break;
-                }
-                switchActivePlayer(activePlayer);
-            }
-        }
 
         // checks an array to see if a certain element appears a certain number of times in a row
         function checkForCluster(arr, wantedElement) {
@@ -289,90 +271,60 @@
         }
 
         return {
-            playGame,
+            getGameBoard,
+            makeMove,
             printGameBoard
         };
-    });
+    })();
 
 
     const DisplayController = (function() {
 
-        const game = GameController();
+        const game = GameController;
 
-        const _makeEmptyCell = function(rowIndex, colIndex) {
-            const newCell = document.createElement("div");
-            newCell.dataset["row"] = rowIndex.toString();
-            newCell.dataset["col"] = colIndex.toString();
-            newCell.classList.add("cell");
-            return newCell;
+        const boardDiv = document.querySelector(".board-container");
+
+        const changeCellDisplayToken = function(cell, newToken) {
+            const oldToken = cell.firstChild;
+            cell.replaceChild(newToken, oldSymbol);
         }
 
-        const _makeCell = function(rowIndex, colIndex, DISPLAYED_SYMBOL) {
-            const newCell = document.createElement("div");
-            newCell.dataset["row"] = rowIndex.toString();
-            newCell.dataset["col"] = colIndex.toString();
-            newCell.classList.add("cell");
-            cellContents.appendChild(DISPLAYED_SYMBOL);
-            return newCell;
-        }
+        const makeDisplayCell = function(rowIndex, colIndex) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.dataset['rowIndex'] = rowIndex;
+            cell.dataset['colIndex'] = colIndex;
+            return cell;
+        };
+
+        const displayBoard = function() {
+            // unnest grid to make it easier to work with
+            const grid = game.getGameBoard().getGrid().flat();
+            grid.forEach(cell => {
+                const displayCell = makeDisplayCell(cell.getRowIndex(), cell.getColIndex());
+                boardDiv.appendChild(displayCell);
+            });
+        };
         
-        const _makeEmptyGrid = function(size) {
-            const newGrid = document.createElement("div");
-            for (let row = 0; row < size; row++) {
-                for (let col = 0; col < size; col++) {
-                    const newCell = _makeEmptyCell(row, col);
-                    newGrid.appendChild(newCell);
-                }
+        const addListener = function() {
+            for (const displayCell of boardDiv.children) {
+                displayCell.addEventListener("click", () => {
+                    const rowIndex = displayCell.dataset["rowIndex"];
+                    const colIndex = displayCell.dataset["colIndex"];
+                    game.makeMove(rowIndex, colIndex);
+                });
             }
-            return newGrid;
         }
 
-        const _changeCellSymbol = function(cell, newSymbol) {
-            const oldSymbol = cell.firstChild;
-            cell.replaceChild(newSymbol, oldSymbol);
-        }
 
-        const _makeGrid = function() {
-            grid = gameBoard.getGrid();
-            const newGrid = document.createElement("div");
-            for (row in grid) {
-                for (col in grid[row]) {
-                    const cellSymbol = gameBoard.getCellSymbol(row, col);
-                    const newCell = _makeCell(row, col, cellSymbol);
-                    newGrid.appendChild("newCell");
-                }
-            }
-            return newGrid;
-        }
-
-        const displayGrid = function() {
-            const grid = _makeEmptyGrid(Gameboard.getSize());
-            grid.classList.add("board-grid");
-            const boardDisplay = document.querySelector(".game-board");
-            boardDisplay.appendChild(grid);
-        }
-        
         return {
-            displayGrid,
+            boardDiv,
+            displayBoard,
+            addListener,
         }
-    })(Gameboard);
+    })();
 
-    const BoardClickObserver = (function(boardDisplay) {
+DisplayController.displayBoard();
+DisplayController.addListener();
 
-    })(BoardDisplayController);
-
-    function runGame() {
-        BoardDisplayController.displayGrid();
-    }
-
-    runGame();
-
-
-    function addListener(grid) {
-        grid.array.forEach(element => {
-            element.addEventListener("click", (element => {
-
-            }));
-        });
-    }
 
