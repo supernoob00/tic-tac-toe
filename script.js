@@ -173,6 +173,8 @@
 
         let activePlayer = Players["playerOne"];
 
+        const getActivePlayer = () => activePlayer;
+
         const getPlayerNameChoice = function() {
             const playerName = prompt("Enter your name: ");
             return playerName;
@@ -271,6 +273,7 @@
         }
 
         return {
+            getActivePlayer,
             getGameBoard,
             makeMove,
             printGameBoard
@@ -284,9 +287,8 @@
 
         const boardDiv = document.querySelector(".board-container");
 
-        const changeCellDisplayToken = function(cell, newToken) {
-            const oldToken = cell.firstChild;
-            cell.replaceChild(newToken, oldSymbol);
+        const changeCellDisplay = function(cell, newToken) {
+            cell.textContent = newToken;
         }
 
         const makeDisplayCell = function(rowIndex, colIndex) {
@@ -311,6 +313,7 @@
                 displayCell.addEventListener("click", () => {
                     const rowIndex = displayCell.dataset["rowIndex"];
                     const colIndex = displayCell.dataset["colIndex"];
+                    changeCellDisplay(displayCell, game.getActivePlayer().getPlayerToken());
                     game.makeMove(rowIndex, colIndex);
                 });
             }
