@@ -10,11 +10,6 @@
         CROSS: "X",
     };
 
-    const DISPLAYED_SYMBOLS = {
-        EMPTY: document.createTextNode(""),
-        NAUGHT: document.createTextNode("O"),
-        CROSS: document.createTextNode("X"),
-    };
 
     // useful generic functions for working with 2d arrays 
     // contents of matrix is irrelevant; functions only work with row and column indices
@@ -167,8 +162,8 @@
         const getGameBoard = () => gameBoard;
 
         const Players = {
-            playerOne: player("unknown", TOKENS.CROSS),
-            playerTwo: player("unknown", TOKENS.NAUGHT)
+            playerOne: player("Player1", TOKENS.CROSS),
+            playerTwo: player("Player2", TOKENS.NAUGHT)
         };
 
         let activePlayer = Players["playerOne"];
@@ -191,41 +186,59 @@
             return isEmptyCell;
         };
 
-        const isCellWinner = function() {
-                if (cell.getToken() !== TOKENS.EMPTY) {
-                const token = cell.getToken();
-                const rowIndex = cell.getRowIndex();
-                const colIndex = cell.getColIndex();
-     
-                const isRowWinner = checkForCluster(Gameboard.getRows()[rowIndex].map(cell => cell.getToken()), token);
-                const isColWinner = checkForCluster(Gameboard.getCols()[colIndex].map(cell => cell.getToken()), token);
-     
-                // each diagonal has its own special value that all cells in the diagonal share
-                // for right diagonals that value is rowIndex + colIndex
-                // for left diagonals that value is rowIndex + (lastColIndex - colIndex)
-     
-                const antiDiagSum = rowIndex + colIndex;
-                const mainDiagSum = rowIndex + ((Gameboard.getGrid().length - 1) - colIndex);
-     
-                const isAntiDiagWinner = checkForCluster(Gameboard.getDiags()[antiDiagSum].map(cell => cell.getToken()), token);
-                const isMainDiagWinner = checkForCluster(Gameboard.getAntiDiags()[mainDiagSum].map(cell => cell.getToken()), token);
-                const isDiagWinner = isAntiDiagWinner || isMainDiagWinner;
-     
-                const isWinner = isRowWinner || isColWinner || isDiagWinner;
-                return isWinner;
+        const isCellWinner = function(rowIndex, colIndex) {
+            // checks an row, column or diagonal to see if a certain element appears required amount of times in a row to win
+            const checkForCluster = function(arr, wantedElement) {
+                let count = 0;
+                for (let i in arr) {
+                    if (arr[i] === wantedElement) {
+                        count++;
+                    }
+                    else {
+                        count = 0;
+                    }
+                    if (count >= countToWin) {
+                        console.log('true');
+                        return true;
+                    }
                 }
-                else {
-                    return false;
-                }
+                return false;
+            }
+
+            const token = gameBoard.getCell(rowIndex, colIndex).getToken();
+            if (token !== TOKENS.EMPTY) {
+    
+            const isRowWinner = checkForCluster(gameBoard.getRows()[rowIndex].map(cell => cell.getToken()), token);
+            const isColWinner = checkForCluster(gameBoard.getCols()[colIndex].map(cell => cell.getToken()), token);
+    
+            // each diagonal has its own special value that all cells in the diagonal share
+            // for right diagonals that value is rowIndex + colIndex
+            // for left diagonals that value is rowIndex + (lastColIndex - colIndex)
+    
+            const antiDiagSum = rowIndex + colIndex;
+            const mainDiagSum = rowIndex + ((gameBoard.getGrid().length - 1) - colIndex);
+    
+            const isAntiDiagWinner = checkForCluster(gameBoard.getAntiDiags()[antiDiagSum].map(cell => cell.getToken()), token);
+            const isMainDiagWinner = checkForCluster(gameBoard.getMainDiags()[mainDiagSum].map(cell => cell.getToken()), token);
+            const isDiagWinner = isAntiDiagWinner || isMainDiagWinner;
+    
+            const isWinner = isRowWinner || isColWinner || isDiagWinner;
+            return isWinner;
+            }
+            else {
+                return false;
+            }
         };
 
         const isGameTied = function() {
-                Gameboard.getGrid.flat(2).forEach(function(cell) {
-                    if (cell.getToken() !== "TOKENS.EMPTY") {
+            for (let rowIndex in gameBoard.getGrid()) {
+                for (let colIndex in gameBoard.getGrid()[rowIndex]) {
+                    if (gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY) {
                         return false;
                     }
-                });
-                return true;
+                }
+            }
+            return true;
         };
 
         const switchActivePlayer = function() {
@@ -238,29 +251,28 @@
         };
 
         const makeMove = function(rowIndex, colIndex) {
-            console.log(`${activePlayer.getName()} put an ${activePlayer.getPlayerToken()} on square [${rowIndex}, ${colIndex}]`);
             const chosenCell = gameBoard.getCell(rowIndex, colIndex);
+            console.log(`${activePlayer.getName()} put an ${activePlayer.getPlayerToken()} on square [${rowIndex}, ${colIndex}]`);
             chosenCell.changeToken(activePlayer.getPlayerToken());
-            switchActivePlayer();
         };
 
-        // checks an array to see if a certain element appears a certain number of times in a row
-        function checkForCluster(arr, wantedElement) {
-        let count = 0;
-        for (let i in arr) {
-            if (arr[i] === wantedElement) {
-                count++;
+        const playRound = function(chosenRowIndex, chosenColIndex) {
+            if (isValidMove(chosenRowIndex, chosenColIndex)) {
+                makeMove(chosenRowIndex, chosenColIndex);
+                if (isCellWinner(chosenRowIndex, chosenColIndex)) {
+                    console.log(`${activePlayer.getName()} wins!`);
+                }
+                if (isGameTied()) {
+                    console.log(gameBoard.getGrid().flat());
+                    console.log(gameBoard.getGrid().flat()[0].getToken());
+                    console.log("Game is tied!");
+                }
+                switchActivePlayer();
             }
             else {
-                count = 0;
+                console.log("Not a valid move.")
             }
-            if (count >= countToWin) {
-                console.log('true');
-                return true;
-            }
-        }
-        return false;
-    }
+        };
 
         const printGameBoard = function() {
             Gameboard.getGrid().forEach(row => {
@@ -270,11 +282,12 @@
                 });
                 console.log(rowString);
             });
-        }
+        };
 
         return {
             getActivePlayer,
             getGameBoard,
+            playRound,
             makeMove,
             printGameBoard
         };
@@ -287,47 +300,51 @@
 
         const boardDiv = document.querySelector(".board-container");
 
-        const changeCellDisplay = function(cell, newToken) {
-            cell.textContent = newToken;
-        }
-
-        const makeDisplayCell = function(rowIndex, colIndex) {
-            const cell = document.createElement("div");
-            cell.classList.add("cell");
-            cell.dataset['rowIndex'] = rowIndex;
-            cell.dataset['colIndex'] = colIndex;
-            return cell;
+        const makeDisplayCell = function(cell) {
+            const displayCell = document.createElement("div");
+            displayCell.classList.add("cell");
+            displayCell.dataset['rowIndex'] = cell.getRowIndex();
+            displayCell.dataset['colIndex'] = cell.getColIndex();
+            displayCell.textContent = cell.getToken();
+            return displayCell;
         };
 
-        const displayBoard = function() {
+        const clearBoardDisplay = function() {
+            while (boardDiv.hasChildNodes()) {
+                boardDiv.removeChild(boardDiv.lastChild);
+            }
+        };
+
+        const updateBoardDisplay = function() {
+            clearBoardDisplay();
             // unnest grid to make it easier to work with
             const grid = game.getGameBoard().getGrid().flat();
             grid.forEach(cell => {
-                const displayCell = makeDisplayCell(cell.getRowIndex(), cell.getColIndex());
+                const displayCell = makeDisplayCell(cell);
                 boardDiv.appendChild(displayCell);
             });
         };
         
-        const addListener = function() {
-            for (const displayCell of boardDiv.children) {
-                displayCell.addEventListener("click", () => {
-                    const rowIndex = displayCell.dataset["rowIndex"];
-                    const colIndex = displayCell.dataset["colIndex"];
-                    changeCellDisplay(displayCell, game.getActivePlayer().getPlayerToken());
-                    game.makeMove(rowIndex, colIndex);
-                });
+        const boardListener = function(e) {
+
+            const clickedRowIndex = e.target.dataset['rowIndex'];
+            const clickedColIndex = e.target.dataset['colIndex'];
+
+            if (!clickedRowIndex || !clickedColIndex) {
+                return;
             }
+
+            game.playRound(parseInt(clickedRowIndex), parseInt(clickedColIndex));
+            updateBoardDisplay();
         }
 
+        boardDiv.addEventListener("click", boardListener);
 
         return {
             boardDiv,
-            displayBoard,
-            addListener,
+            updateBoardDisplay,
         }
     })();
 
-DisplayController.displayBoard();
-DisplayController.addListener();
-
+DisplayController.updateBoardDisplay();
 
