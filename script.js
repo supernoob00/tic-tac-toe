@@ -85,7 +85,7 @@
         };
     };
 
-    const Gameboard = (function(size) {
+    const GameBoard = (function(size) {
         const _makeGrid = function(size) {
             let grid = [];
             for (let rowIndex = 0; rowIndex < size; rowIndex++) {
@@ -155,11 +155,28 @@
 
     // controls rules of the game, win condition checks
     const GameController = (function() {
-        const countToWin = 3;
+        let countToWin = 3;
 
-        const gameBoard = Gameboard(3);
+        let gameBoard = GameBoard(3);
 
         const getGameBoard = () => gameBoard;
+
+        const setGameBoard = (newGameBoard) => gameBoard = newGameBoard;
+
+        let _isGameOver = false;
+
+        const isGameOver = () => _isGameOver;
+
+        const gameOver = () => _isGameOver = true;
+
+        const whoWon = function() {
+            if (isGameOver) {
+                getActivePlayer();
+            }
+            else {
+                return null;
+            }
+        }
 
         const Players = {
             playerOne: player("Player1", TOKENS.CROSS),
@@ -261,13 +278,17 @@
                 makeMove(chosenRowIndex, chosenColIndex);
                 if (isCellWinner(chosenRowIndex, chosenColIndex)) {
                     console.log(`${activePlayer.getName()} wins!`);
+                    gameOver();
                 }
-                if (isGameTied()) {
+                else if (isGameTied()) {
                     console.log(gameBoard.getGrid().flat());
                     console.log(gameBoard.getGrid().flat()[0].getToken());
                     console.log("Game is tied!");
+                    gameOver();
                 }
-                switchActivePlayer();
+                else {
+                    switchActivePlayer();
+                }
             }
             else {
                 console.log("Not a valid move.")
@@ -286,7 +307,9 @@
 
         return {
             getActivePlayer,
+            isGameOver,
             getGameBoard,
+            setGameBoard,
             playRound,
             makeMove,
             printGameBoard
@@ -294,9 +317,12 @@
     })();
 
 
-    const DisplayController = (function() {
 
+
+    const GameDisplayController = (function() {
         const game = GameController;
+
+        const getGame = () => game;
 
         const boardDiv = document.querySelector(".board-container");
 
@@ -336,15 +362,35 @@
 
             game.playRound(parseInt(clickedRowIndex), parseInt(clickedColIndex));
             updateBoardDisplay();
+            if (game.isGameOver()) {
+                boardDiv.removeEventListener("click", boardListener);
+            }
         }
 
         boardDiv.addEventListener("click", boardListener);
 
         return {
+            getGame,
             boardDiv,
             updateBoardDisplay,
         }
     })();
 
-DisplayController.updateBoardDisplay();
+
+    const ButtonsController = (function() {
+        const newGameButton = document.querySelector(".new-game-button");
+
+        const startNewGame = function(e) {
+            console.log("New game started.");
+            const newGameBoard = GameBoard(3);
+            GameDisplayController.getGame().setGameBoard(newGameBoard);
+            GameDisplayController.updateBoardDisplay();
+        };
+
+        newGameButton.addEventListener("click", startNewGame);
+    })();
+        
+
+
+GameDisplayController.updateBoardDisplay();
 
