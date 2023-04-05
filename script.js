@@ -314,15 +314,17 @@
             makeMove,
             printGameBoard
         };
-    })();
+    });
 
 
 
 
     const GameDisplayController = (function() {
-        const game = GameController;
+        let game = GameController();
 
         const getGame = () => game;
+
+        const startNewGame = () => game = GameController();
 
         const boardDiv = document.querySelector(".board-container");
 
@@ -356,14 +358,18 @@
             const clickedRowIndex = e.target.dataset['rowIndex'];
             const clickedColIndex = e.target.dataset['colIndex'];
 
+            // something besides a board square was clicked
             if (!clickedRowIndex || !clickedColIndex) {
                 return;
             }
 
-            game.playRound(parseInt(clickedRowIndex), parseInt(clickedColIndex));
-            updateBoardDisplay();
-            if (game.isGameOver()) {
-                boardDiv.removeEventListener("click", boardListener);
+            // run if game is NOT over
+            if (!game.isGameOver()) {
+                game.playRound(parseInt(clickedRowIndex), parseInt(clickedColIndex));
+                updateBoardDisplay();
+            }
+            else {
+                return;
             }
         }
 
@@ -371,19 +377,19 @@
 
         return {
             getGame,
+            startNewGame,
             boardDiv,
             updateBoardDisplay,
         }
     })();
 
-
+    // For any buttons outside of the actual game grid
     const ButtonsController = (function() {
         const newGameButton = document.querySelector(".new-game-button");
 
         const startNewGame = function(e) {
             console.log("New game started.");
-            const newGameBoard = GameBoard(3);
-            GameDisplayController.getGame().setGameBoard(newGameBoard);
+            GameDisplayController.startNewGame();
             GameDisplayController.updateBoardDisplay();
         };
 
