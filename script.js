@@ -10,7 +10,6 @@
         CROSS: "X",
     };
 
-
     // useful generic functions for working with 2d arrays 
     // contents of matrix is irrelevant; functions only work with row and column indices
     // only valid for square arrays, could be used for any array shape with a little tweaking
@@ -56,6 +55,7 @@
             const mainDiags = startingCells.map(coordinate => traverseMatrix(matrix, coordinate, [1,1]));
             return mainDiags;
         };
+    
 
         return {
                 rows,
@@ -65,6 +65,10 @@
                 isInBounds,
                 traverseMatrix,
         };
+    })();
+
+    const arrayFuncs = (function() {
+        // checks an array to see if a certain element appears given amount of times in a row
     })();
 
     const Cell = function(token, rowIndex, colIndex) {
@@ -77,15 +81,21 @@
         const getColIndex = () => _colIndex;
         const changeToken = (newToken) => _token = newToken;
 
+        let _isWinner = false;
+        const getIsWinner = () => _isWinner;
+        const makeWinner = () => _isWinner = true;
+
         return {
             getToken,
             getRowIndex,
             getColIndex,
             changeToken,
+            getIsWinner,
+            makeWinner,
         };
     };
 
-    const GameBoard = (function(size) {
+    const GameBoard = function(size) {
         const _makeGrid = function(size) {
             let grid = [];
             for (let rowIndex = 0; rowIndex < size; rowIndex++) {
@@ -128,7 +138,7 @@
             getCell,
             clearGrid
         };
-    });
+    };
 
     const player = function(name, token) {
         const _playerName = name;
@@ -153,39 +163,43 @@
         };
     };
 
-    // controls rules of the game, win condition checks
-    const GameController = (function() {
-        let countToWin = 3;
+    const GameController = function(boardSize = 3, countToWin = 3) {
+        let _gameBoard = GameBoard(boardSize);
+        const getGameBoard = () => _gameBoard;
+        const setGameBoard = (newGameBoard) => _gameBoard = newGameBoard;
 
-        let gameBoard = GameBoard(3);
-
-        const getGameBoard = () => gameBoard;
-
-        const setGameBoard = (newGameBoard) => gameBoard = newGameBoard;
+        let _countToWin = countToWin;
+        const getCountToWin = () => _countToWin;
+        const setCountToWin = (newCount) => _countToWin = newCount;
 
         let _isGameOver = false;
-
         const isGameOver = () => _isGameOver;
-
         const gameOver = () => _isGameOver = true;
-
-        const whoWon = function() {
-            if (isGameOver) {
-                getActivePlayer();
-            }
-            else {
-                return null;
-            }
-        }
 
         const Players = {
             playerOne: player("Player1", TOKENS.CROSS),
             playerTwo: player("Player2", TOKENS.NAUGHT)
         };
 
-        let activePlayer = Players["playerOne"];
+        let _activePlayer = Players["playerOne"];
+        const getActivePlayer = () => _activePlayer;
+        const switchActivePlayer = function() {
+            if (_activePlayer === Players["playerOne"]) {
+                _activePlayer = Players["playerTwo"];
+            }
+            else {
+                _activePlayer = Players["playerOne"];
+            }
+        };
 
-        const getActivePlayer = () => activePlayer;
+        const whoWon = function() {
+            if (_isGameOver) {
+                getActivePlayer();
+            }
+            else {
+                return null;
+            }
+        }
 
         const getPlayerNameChoice = function() {
             const playerName = prompt("Enter your name: ");
@@ -199,58 +213,58 @@
         }
 
         const isValidMove = function(rowIndex, colIndex) {
-            const isEmptyCell = gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY;
+            const isEmptyCell = _gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY;
             return isEmptyCell;
         };
 
-        const isCellWinner = function(rowIndex, colIndex) {
-            // checks an row, column or diagonal to see if a certain element appears required amount of times in a row to win
-            const checkForCluster = function(arr, wantedElement) {
-                let count = 0;
-                for (let i in arr) {
-                    if (arr[i] === wantedElement) {
-                        count++;
+        // Given a position, checks win condition at that position and returns all winning cells in a nested array
+        const makeCellsWinner = function(rowIndex, colIndex) {
+            const token = _gameBoard.getCell(rowIndex, colIndex).getToken();
+
+            const findCluster = function(cells) {
+                let cellCluster = [];
+                for (let i in cells) {
+                    if (cells[i].getToken() === token) {
+                        cellCluster.push(cells[i]);
                     }
                     else {
-                        count = 0;
+                        cellCluster = [];
                     }
-                    if (count >= countToWin) {
-                        console.log('true');
-                        return true;
+                    if (cellCluster.length >= _countToWin) {
+                        return cellCluster;
                     }
                 }
-                return false;
+                return null;
             }
 
-            const token = gameBoard.getCell(rowIndex, colIndex).getToken();
             if (token !== TOKENS.EMPTY) {
-    
-            const isRowWinner = checkForCluster(gameBoard.getRows()[rowIndex].map(cell => cell.getToken()), token);
-            const isColWinner = checkForCluster(gameBoard.getCols()[colIndex].map(cell => cell.getToken()), token);
-    
-            // each diagonal has its own special value that all cells in the diagonal share
-            // for right diagonals that value is rowIndex + colIndex
-            // for left diagonals that value is rowIndex + (lastColIndex - colIndex)
-    
-            const antiDiagSum = rowIndex + colIndex;
-            const mainDiagSum = rowIndex + ((gameBoard.getGrid().length - 1) - colIndex);
-    
-            const isAntiDiagWinner = checkForCluster(gameBoard.getAntiDiags()[antiDiagSum].map(cell => cell.getToken()), token);
-            const isMainDiagWinner = checkForCluster(gameBoard.getMainDiags()[mainDiagSum].map(cell => cell.getToken()), token);
-            const isDiagWinner = isAntiDiagWinner || isMainDiagWinner;
-    
-            const isWinner = isRowWinner || isColWinner || isDiagWinner;
-            return isWinner;
+            
+                const row = _gameBoard.getRows()[rowIndex];
+                const col = _gameBoard.getCols()[colIndex];
+            
+                // each diagonal has its own special value that all cells in the diagonal share
+                // for antidiagonals that value is rowIndex + colIndex
+                // for main diagonals that value is rowIndex + (lastColIndex - colIndex)
+        
+                const antiDiagSum = rowIndex + colIndex;
+                const mainDiagSum = rowIndex + ((_gameBoard.getGrid().length - 1) - colIndex);
+                const antiDiag = _gameBoard.getAntiDiags()[antiDiagSum];
+                const mainDiag = _gameBoard.getMainDiags()[mainDiagSum];
+        
+                const possibleWinPaths = [row, col, antiDiag, mainDiag];
+
+                let allWinCells = possibleWinPaths.map(arr => findCluster(arr)).flat();
+                allWinCells = allWinCells.filter(arr => arr !== null);
+                allWinCells.forEach(cell => cell.makeWinner());
             }
-            else {
-                return false;
-            }
-        };
+            return null;
+        }
+
 
         const isGameTied = function() {
-            for (let rowIndex in gameBoard.getGrid()) {
-                for (let colIndex in gameBoard.getGrid()[rowIndex]) {
-                    if (gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY) {
+            for (let rowIndex in _gameBoard.getGrid()) {
+                for (let colIndex in _gameBoard.getGrid()[rowIndex]) {
+                    if (_gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY) {
                         return false;
                     }
                 }
@@ -258,31 +272,21 @@
             return true;
         };
 
-        const switchActivePlayer = function() {
-            if (activePlayer === Players["playerOne"]) {
-                activePlayer = Players["playerTwo"];
-            }
-            else {
-                activePlayer = Players["playerOne"];
-            }
-        };
-
         const makeMove = function(rowIndex, colIndex) {
-            const chosenCell = gameBoard.getCell(rowIndex, colIndex);
-            console.log(`${activePlayer.getName()} put an ${activePlayer.getPlayerToken()} on square [${rowIndex}, ${colIndex}]`);
-            chosenCell.changeToken(activePlayer.getPlayerToken());
+            const chosenCell = _gameBoard.getCell(rowIndex, colIndex);
+            console.log(`${_activePlayer.getName()} put an ${_activePlayer.getPlayerToken()} on square [${rowIndex}, ${colIndex}]`);
+            chosenCell.changeToken(_activePlayer.getPlayerToken());
         };
 
         const playRound = function(chosenRowIndex, chosenColIndex) {
             if (isValidMove(chosenRowIndex, chosenColIndex)) {
                 makeMove(chosenRowIndex, chosenColIndex);
-                if (isCellWinner(chosenRowIndex, chosenColIndex)) {
-                    console.log(`${activePlayer.getName()} wins!`);
+                makeCellsWinner(chosenRowIndex, chosenColIndex);
+                if (_gameBoard.getCell(chosenRowIndex, chosenColIndex).getIsWinner()) {
+                    console.log(`${_activePlayer.getName()} wins!`);
                     gameOver();
                 }
                 else if (isGameTied()) {
-                    console.log(gameBoard.getGrid().flat());
-                    console.log(gameBoard.getGrid().flat()[0].getToken());
                     console.log("Game is tied!");
                     gameOver();
                 }
@@ -295,36 +299,30 @@
             }
         };
 
-        const printGameBoard = function() {
-            Gameboard.getGrid().forEach(row => {
-                let rowString = "";
-                row.forEach(cell => {
-                    rowString = rowString.concat(cell.getToken());
-                });
-                console.log(rowString);
-            });
-        };
+        const _gameBoardHistory = [];
+        const addToGameBoardHistory = (gameBoard) => _gameBoardHistory.push(gameBoard);
+        const getGameBoardHistory = () => _gameBoardHistory;
+
 
         return {
+            getCountToWin,
+            setCountToWin,
             getActivePlayer,
-            isGameOver,
             getGameBoard,
             setGameBoard,
             playRound,
+            isGameOver,
             makeMove,
-            printGameBoard
+            getGameBoardHistory,
         };
-    });
-
-
-
+    };
 
     const GameDisplayController = (function() {
-        let game = GameController();
+        let _game = GameController();
 
-        const getGame = () => game;
+        const getGame = () => _game;
 
-        const startNewGame = () => game = GameController();
+        const startNewGame = () => _game = GameController();
 
         const boardDiv = document.querySelector(".board-container");
 
@@ -343,14 +341,28 @@
             }
         };
 
+        const highlightWinSquares = function() {
+            for (let rowIndex in _game.getGameBoard().getGrid()) {
+                for (let colIndex in _game.getGameBoard().getGrid()[rowIndex]) {
+                    if (_game.getGameBoard().getCell(rowIndex, colIndex).getIsWinner()) {
+                        const wonDisplayCell = document.querySelector(`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`);
+                        wonDisplayCell.classList.add("won");
+                    }
+                }
+            }
+        };
+
         const updateBoardDisplay = function() {
             clearBoardDisplay();
             // unnest grid to make it easier to work with
-            const grid = game.getGameBoard().getGrid().flat();
+            const grid = _game.getGameBoard().getGrid().flat();
             grid.forEach(cell => {
                 const displayCell = makeDisplayCell(cell);
                 boardDiv.appendChild(displayCell);
             });
+            if (_game.isGameOver()) {
+                highlightWinSquares();
+            }
         };
         
         const boardListener = function(e) {
@@ -364,14 +376,14 @@
             }
 
             // run if game is NOT over
-            if (!game.isGameOver()) {
-                game.playRound(parseInt(clickedRowIndex), parseInt(clickedColIndex));
+            if (!_game.isGameOver()) {
+                _game.playRound(parseInt(clickedRowIndex), parseInt(clickedColIndex));
                 updateBoardDisplay();
             }
             else {
                 return;
             }
-        }
+        };
 
         boardDiv.addEventListener("click", boardListener);
 
@@ -380,10 +392,9 @@
             startNewGame,
             boardDiv,
             updateBoardDisplay,
-        }
+        };
     })();
 
-    // For any buttons outside of the actual game grid
     const ButtonsController = (function() {
         const newGameButton = document.querySelector(".new-game-button");
 
@@ -395,8 +406,7 @@
 
         newGameButton.addEventListener("click", startNewGame);
     })();
-        
 
-
+// first screen update using default 3x3 board
 GameDisplayController.updateBoardDisplay();
 
