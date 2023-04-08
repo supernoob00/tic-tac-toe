@@ -67,35 +67,24 @@
         };
     })();
 
-    const arrayFuncs = (function() {
-        // checks an array to see if a certain element appears given amount of times in a row
-    })();
-
     const Cell = function(token, rowIndex, colIndex) {
-        let _token = token;
-        const _rowIndex = rowIndex;
-        const _colIndex = colIndex;
-
-        const getToken = () => _token;
-        const getRowIndex = () => _rowIndex;
-        const getColIndex = () => _colIndex;
-        const changeToken = (newToken) => _token = newToken;
-
-        let _isWinner = false;
-        const getIsWinner = () => _isWinner;
-        const makeWinner = () => _isWinner = true;
+        const getToken = () => token;
+        const getRowIndex = () => rowIndex;
+        const getColIndex = () => colIndex;
+        const changeToken = (newToken) => token = newToken;
 
         return {
             getToken,
             getRowIndex,
             getColIndex,
             changeToken,
-            getIsWinner,
-            makeWinner,
         };
     };
 
     const GameBoard = function(size) {
+        const _size = size;
+        const getSize = () => _size;
+
         const _makeGrid = function(size) {
             let grid = [];
             for (let rowIndex = 0; rowIndex < size; rowIndex++) {
@@ -111,8 +100,8 @@
         const getGrid = () => _grid;
         const getCell = (rowIndex, colIndex) => _grid[rowIndex][colIndex];
         const clearGrid = function() {
-            for (rowIndex in _grid) {
-                for (colIndex in _grid[rowIndex]) {
+            for (let rowIndex in _grid) {
+                for (let colIndex in _grid[rowIndex]) {
                     let cell = getCell(rowIndex, colIndex);
                     cell.changeToken(TOKENS.EMPTY);
                 }
@@ -130,6 +119,7 @@
         const getMainDiags = () => _mainDiags;
 
         return {
+            getSize,
             getGrid,
             getRows,
             getCols,
@@ -163,63 +153,121 @@
         };
     };
 
-    const GameController = function(boardSize = 3, countToWin = 3) {
-        let _gameBoard = GameBoard(boardSize);
+    const Players = [player("Player1", TOKENS.CROSS), player("Player2", TOKENS.NAUGHT)];
+
+    // All info about the game in a 'snapshot'
+    const gameState = (function() {
+        const _gameBoard = GameBoard(3);
         const getGameBoard = () => _gameBoard;
-        const setGameBoard = (newGameBoard) => _gameBoard = newGameBoard;
-
-        let _countToWin = countToWin;
-        const getCountToWin = () => _countToWin;
-        const setCountToWin = (newCount) => _countToWin = newCount;
-
-        let _isGameOver = false;
-        const isGameOver = () => _isGameOver;
-        const gameOver = () => _isGameOver = true;
-
-        const Players = {
-            playerOne: player("Player1", TOKENS.CROSS),
-            playerTwo: player("Player2", TOKENS.NAUGHT)
-        };
-
-        let _activePlayer = Players["playerOne"];
+        let _activePlayer = Players[0];
         const getActivePlayer = () => _activePlayer;
         const switchActivePlayer = function() {
-            if (_activePlayer === Players["playerOne"]) {
-                _activePlayer = Players["playerTwo"];
+            if (_activePlayer === Players[0]) {
+                _activePlayer = Players[1];
             }
             else {
-                _activePlayer = Players["playerOne"];
+                _activePlayer = Players[0];
             }
         };
-
-        const whoWon = function() {
-            if (_isGameOver) {
-                getActivePlayer();
+        let _isGameOver = false;
+        const getIsGameOver = () => _isGameOver;
+        const gameOver = () => _isGameOver = true;
+        let _winningCells = [];
+        const getWinningCells = () => _winningCells;
+        const setWinningCells = (cells) => {
+            for (let i in cells) {
+                _winningCells.push(cells[i]);
             }
-            else {
-                return null;
+        };
+        const reset = function() {
+            _gameBoard.clearGrid();
+            switchActivePlayer();
+            _isGameOver = false;
+            _winningCells = [];
+        };
+
+        return {
+            getGameBoard,
+            gameOver,
+            getIsGameOver,
+            getActivePlayer, 
+            switchActivePlayer,
+            setWinningCells,
+            getWinningCells,
+            reset
+        };
+    });
+
+    const GameStateHistory = (function() {
+        let currentIndex = 0;
+        // history has starting gamestate
+        const _history = [gameState()];
+        const getHistory = () => _history;
+        const addToHistory = (gs) => {
+            currentIndex++;
+            _history.splice(currentIndex, Infinity);
+            _history.push(gs);
+        };
+        const getPreviousGameState = () => {
+            currentIndex--;
+        };
+        const getCurrentIndex = () => currentIndex;
+        const getCurrentGameState = () => _history[currentIndex];
+
+        return {
+            getCurrentIndex,
+            getHistory,
+            addToHistory,
+            getPreviousGameState,
+            getCurrentGameState,
+        }
+    })();
+
+    // Takes a gamestate, makes a deep copy, mutates the copy, then returns it
+    const GameController = function(gs, rowIndex, colIndex) {
+
+        // makes a true copy of a gamestate
+        const makeGameStateCopy = function() {
+            const gameStateCopy = gameState();
+    
+            // make a true copy of the gameboard
+            const boardCopy = gameStateCopy.getGameBoard();
+            for (let rowIndex in boardCopy.getGrid()) {
+                for (let colIndex in boardCopy.getGrid()[rowIndex]) {
+                    const origCell = gs.getGameBoard().getCell(rowIndex, colIndex);
+                    const newCell = boardCopy.getCell(rowIndex, colIndex);
+                    newCell.changeToken(origCell.getToken());
+                }
             }
+    
+            // match isGameOver
+            if (gs.getIsGameOver()) {
+                gameStateCopy.gameOver();
+            }
+    
+            // match activePlayer
+            if (gameStateCopy.getActivePlayer() !== gs.getActivePlayer()) {
+                gameStateCopy.switchActivePlayer();
+            }
+    
+            return gameStateCopy;
         }
 
-        const getPlayerNameChoice = function() {
-            const playerName = prompt("Enter your name: ");
-            return playerName;
-        }
+        const gameStateCopy = makeGameStateCopy();
 
-        const getPlayerMove = function() {
-            const rowIndex = prompt("Enter row index: ");
-            const colIndex = prompt("Enter col index: ");
-            return [rowIndex, colIndex];
-        }
+        const _boardSize = 3;
+        const getBoardSize = () => _boardSize;
+        const _countToWin = 3;
+        const getCountToWin = () => 3;
 
-        const isValidMove = function(rowIndex, colIndex) {
-            const isEmptyCell = _gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY;
+        const isValidMove = function() {
+            const isEmptyCell = gameStateCopy.getGameBoard().getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY;
             return isEmptyCell;
         };
 
-        // Given a position, checks win condition at that position and returns all winning cells in a nested array
-        const makeCellsWinner = function(rowIndex, colIndex) {
-            const token = _gameBoard.getCell(rowIndex, colIndex).getToken();
+        const getWinningCells = function() {
+            const board = gameStateCopy.getGameBoard();
+            const token = board.getCell(rowIndex, colIndex).getToken();
 
             const findCluster = function(cells) {
                 let cellCluster = [];
@@ -239,32 +287,42 @@
 
             if (token !== TOKENS.EMPTY) {
             
-                const row = _gameBoard.getRows()[rowIndex];
-                const col = _gameBoard.getCols()[colIndex];
+                const row = board.getRows()[rowIndex];
+                const col = board.getCols()[colIndex];
             
                 // each diagonal has its own special value that all cells in the diagonal share
                 // for antidiagonals that value is rowIndex + colIndex
                 // for main diagonals that value is rowIndex + (lastColIndex - colIndex)
         
                 const antiDiagSum = rowIndex + colIndex;
-                const mainDiagSum = rowIndex + ((_gameBoard.getGrid().length - 1) - colIndex);
-                const antiDiag = _gameBoard.getAntiDiags()[antiDiagSum];
-                const mainDiag = _gameBoard.getMainDiags()[mainDiagSum];
+                const mainDiagSum = rowIndex + ((board.getGrid().length - 1) - colIndex);
+                const antiDiag = board.getAntiDiags()[antiDiagSum];
+                const mainDiag = board.getMainDiags()[mainDiagSum];
+
+                console.log(antiDiagSum);
+                console.log(mainDiagSum);
+                console.log(antiDiag);
+                console.log(mainDiag);
         
                 const possibleWinPaths = [row, col, antiDiag, mainDiag];
 
                 let allWinCells = possibleWinPaths.map(arr => findCluster(arr)).flat();
                 allWinCells = allWinCells.filter(arr => arr !== null);
-                allWinCells.forEach(cell => cell.makeWinner());
+                if (allWinCells.length > 0) {
+                    return allWinCells;
+                }
+                else {
+                    return null;
+                }
             }
             return null;
-        }
-
+        };
 
         const isGameTied = function() {
-            for (let rowIndex in _gameBoard.getGrid()) {
-                for (let colIndex in _gameBoard.getGrid()[rowIndex]) {
-                    if (_gameBoard.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY) {
+            const board = gameStateCopy.getGameBoard();
+            for (let rowIndex in board.getGrid()) {
+                for (let colIndex in board.getGrid()[rowIndex]) {
+                    if (board.getCell(rowIndex, colIndex).getToken() === TOKENS.EMPTY) {
                         return false;
                     }
                 }
@@ -272,26 +330,29 @@
             return true;
         };
 
-        const makeMove = function(rowIndex, colIndex) {
-            const chosenCell = _gameBoard.getCell(rowIndex, colIndex);
-            console.log(`${_activePlayer.getName()} put an ${_activePlayer.getPlayerToken()} on square [${rowIndex}, ${colIndex}]`);
-            chosenCell.changeToken(_activePlayer.getPlayerToken());
+        const placeToken = function() {
+            const chosenCell = gameStateCopy.getGameBoard().getCell(rowIndex, colIndex);
+            const activePlayerName = gameStateCopy.getActivePlayer().getName(); 
+            const activePlayerToken = gameStateCopy.getActivePlayer().getPlayerToken();
+            console.log(`${activePlayerName} put an ${activePlayerToken} on square [${rowIndex}, ${colIndex}]`);
+            chosenCell.changeToken(activePlayerToken);
         };
 
-        const playRound = function(chosenRowIndex, chosenColIndex) {
-            if (isValidMove(chosenRowIndex, chosenColIndex)) {
-                makeMove(chosenRowIndex, chosenColIndex);
-                makeCellsWinner(chosenRowIndex, chosenColIndex);
-                if (_gameBoard.getCell(chosenRowIndex, chosenColIndex).getIsWinner()) {
-                    console.log(`${_activePlayer.getName()} wins!`);
-                    gameOver();
+        const playTurn = function() {
+            if (isValidMove(rowIndex, colIndex)) {
+                placeToken(rowIndex, colIndex);
+                const winningCells = getWinningCells(rowIndex, colIndex);
+                if (winningCells) {
+                    console.log(`${gameStateCopy.getActivePlayer().getName()} wins!`);
+                    gameStateCopy.setWinningCells(winningCells);
+                    gameStateCopy.gameOver();
                 }
                 else if (isGameTied()) {
                     console.log("Game is tied!");
-                    gameOver();
+                    gameStateCopy.gameOver();
                 }
                 else {
-                    switchActivePlayer();
+                    gameStateCopy.switchActivePlayer();
                 }
             }
             else {
@@ -299,30 +360,11 @@
             }
         };
 
-        const _gameBoardHistory = [];
-        const addToGameBoardHistory = (gameBoard) => _gameBoardHistory.push(gameBoard);
-        const getGameBoardHistory = () => _gameBoardHistory;
-
-
-        return {
-            getCountToWin,
-            setCountToWin,
-            getActivePlayer,
-            getGameBoard,
-            setGameBoard,
-            playRound,
-            isGameOver,
-            makeMove,
-            getGameBoardHistory,
-        };
+        playTurn();
+        return gameStateCopy;
     };
-
+    
     const GameDisplayController = (function() {
-        let _game = GameController();
-
-        const getGame = () => _game;
-
-        const startNewGame = () => _game = GameController();
 
         const boardDiv = document.querySelector(".board-container");
 
@@ -341,26 +383,29 @@
             }
         };
 
+        const startNewGame = function() {
+            // do smthing
+        };
+
         const highlightWinSquares = function() {
-            for (let rowIndex in _game.getGameBoard().getGrid()) {
-                for (let colIndex in _game.getGameBoard().getGrid()[rowIndex]) {
-                    if (_game.getGameBoard().getCell(rowIndex, colIndex).getIsWinner()) {
-                        const wonDisplayCell = document.querySelector(`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`);
-                        wonDisplayCell.classList.add("won");
-                    }
-                }
+            const winningCells = GameStateHistory.getCurrentGameState().getWinningCells();
+            for (const i in winningCells) {
+                const rowIndex = winningCells[i].getRowIndex();
+                const colIndex = winningCells[i].getColIndex();
+                const wonDisplayCell = document.querySelector(`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`);
+                wonDisplayCell.classList.add("won");
             }
         };
 
         const updateBoardDisplay = function() {
             clearBoardDisplay();
             // unnest grid to make it easier to work with
-            const grid = _game.getGameBoard().getGrid().flat();
-            grid.forEach(cell => {
+            const flatGrid = GameStateHistory.getCurrentGameState().getGameBoard().getGrid().flat();
+            flatGrid.forEach(cell => {
                 const displayCell = makeDisplayCell(cell);
                 boardDiv.appendChild(displayCell);
             });
-            if (_game.isGameOver()) {
+            if (GameStateHistory.getCurrentGameState().getIsGameOver()) {
                 highlightWinSquares();
             }
         };
@@ -376,8 +421,10 @@
             }
 
             // run if game is NOT over
-            if (!_game.isGameOver()) {
-                _game.playRound(parseInt(clickedRowIndex), parseInt(clickedColIndex));
+            if (!GameStateHistory.getCurrentGameState().getIsGameOver()) {
+                const currentGs = GameStateHistory.getCurrentGameState();
+                const newGameState = GameController(currentGs, parseInt(clickedRowIndex), parseInt(clickedColIndex));
+                GameStateHistory.addToHistory(newGameState);
                 updateBoardDisplay();
             }
             else {
@@ -388,15 +435,16 @@
         boardDiv.addEventListener("click", boardListener);
 
         return {
-            getGame,
-            startNewGame,
             boardDiv,
+            startNewGame,
             updateBoardDisplay,
         };
     })();
 
     const ButtonsController = (function() {
-        const newGameButton = document.querySelector(".new-game-button");
+        const newGameButton = document.querySelector(".new-game");
+        const undoButton = document.querySelector(".undo");
+        const redoButton = document.querySelector(".redo");
 
         const startNewGame = function(e) {
             console.log("New game started.");
@@ -404,9 +452,18 @@
             GameDisplayController.updateBoardDisplay();
         };
 
+        const undoMove = function(e) {
+            console.log("Went back one move.");
+            GameStateHistory.getPreviousGameState();
+            GameDisplayController.updateBoardDisplay();
+        };
+
         newGameButton.addEventListener("click", startNewGame);
+
+        undoButton.addEventListener("click", undoMove);
     })();
 
 // first screen update using default 3x3 board
 GameDisplayController.updateBoardDisplay();
 
+ 
