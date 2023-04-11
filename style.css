@@ -1,6 +1,10 @@
+:root{
+    font-family: "Calibri", sans-serif;
+    --board-size: 3;
+}
 
 div {
-    border: 2px solid red;
+    border: 1px dashed red;
 }
 
 body {
@@ -16,18 +20,42 @@ body {
     padding: 2em;
 }
 
-.game-container > .players {
+.game-container .players {
     display: flex;
     justify-content: space-between;
 }
 
+.player-card {
+    display: flex;
+    align-items: stretch;
+    padding: 0.2em;
+    border: 1px solid grey;
+}
+
+.active-player {
+    box-shadow: 3px;
+    background-color: yellow;
+}
+
+.player-one-token,
+.player-two-token {
+    padding: 1em;
+    border-right: 1px solid grey;
+}
+
+.player-one-name,
+.player-two-name {
+    padding: 1em;
+}
+
 .board-container {
-    height: 500px;
-    width: 500px;
+    width: 30em;
+    height: 30em;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(var(--board-size), 1fr);
+    grid-template-rows: repeat(var(--board-size), 1fr);
     border: 1px solid black;
+    margin: 3rem;
     padding: 0.2em;
     gap: 0.2em;
     background-color: blueviolet;
@@ -38,7 +66,7 @@ body {
     justify-content: center;
     align-items: center;
     background-color: aqua;
-    font-size: 2em;
+    font-size: 3em;
 }
 
 .cell.won {
@@ -48,4 +76,19 @@ body {
 .cell:hover {
     cursor: pointer;
     background-color: orange;
+}
+
+.game-button {
+    padding: 0.5rem;
+    background-color: white;
+}
+
+.toolbar-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+.dropdown-icon {
+    width: 1rem;
+    height: 1rem;
 }

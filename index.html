@@ -14,23 +14,78 @@
     <div class="game-container">
         <div class="players">
             <div class="player-one-card">
-                <div class="player-one-token">X</div>
-                <div class="player-one-info">
-                    <input type="text" name="player-one-name" id="player-one-name" placeholder="Player 1">
+                <div class="player-one-token">
+                    X
+                </div>
+                <div class="player-one-name">
+                        <input type="text" class="name-text-field" id="player-one-name" name="player_one_name" placeholder="Player 1" minlength="1" maxlength="12">
+                        <button type="button" class="name-submit-button" id="player-one-name-submit-button">Submit</button>
+                        <small></small>
                 </div>
             </div>
             <div class="player-two-card">
-                <div class="player-two-token">X</div>
-                <div class="player-two-name">Player Two</div>
+                <div class="player-two-token">
+                    O
+                </div>
+                <div class="player-two-name">
+                        <input type="text" class="name-text-field" id="player-two-name" name="player_two_name" placeholder="Player 2" minlength="1" maxlength="12">
+                        <button type="button" class="name-submit-button" id="player-two-name-submit-button">Submit</button>
+                        <small></small>
+                </div>
             </div>
         </div>
         <div class="board-container"></div>
         <div class="bottom-toolbar">
-            <button class="to-start">To Start</button>
-            <button class="undo">Undo</button>
-            <button class="redo">Redo</button>
-            <button class="to-end">To End</button>
-            <button class="new-game">New Game</button>
+            <button class="game-button to-start">
+                <img class="toolbar-icon" src="./icons/angle-double-left-svgrepo-com.svg">
+            </button>
+            <button class="game-button undo">
+                <img class="toolbar-icon" src="./icons/angle-left-svgrepo-com.svg">
+            </button>
+            <button class="game-button redo">
+                <img class="toolbar-icon" src="./icons/angle-right-svgrepo-com.svg">
+            </button>
+            <button class="game-button to-latest">
+                <img class="toolbar-icon" src="./icons/angle-double-right-svgrepo-com.svg">
+            </button>
+            <button class="game-button new-game">
+                <span>New Game</span>
+                <img class="dropdown-icon" src="./icons/arrow-down-drop-circle-outline.svg">
+            </button>
+            <div class="new-game-dropdown">
+                <form id="game-options-form">
+                    <div class="field">
+                        <label for="board-size-select">Board Size</label>
+                        <select name="board-size" id="board-size-select">
+                            <option value="3">3 x 3</option>
+                            <option value="5">5 x 5</option>
+                            <option value="7">7 x 7</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="first-player-select">Who plays first?</label>
+                        <select name="first-player" id="first-player-select">
+                            <option value="player-one">Player 1</option>
+                            <option value="player-two">Player 2</option>
+                            <option value="random">Random</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="undo-button-toggle">Undo/Redo</label>
+                        <input type="checkbox" id="undo-button-toggle" name="undo" value="undo-enabled">
+                    </div>
+                    <div class="field">
+                        <label for="sound-toggle">Sound</label>
+                        <input type="checkbox" id="sound-toggle" name="sound" value="sound-enabled">
+                    </div>
+                    <div class="field">
+                        <label type="checkbox" id="night-mode-toggle">Night Mode</label>
+                        <input type="checkbox" id="night-mode-toggle" name="night-mode" value="night-mode-enabled">
+                    </div>
+                    <button type="submit" class="new-game-button">New Game</button>
+                </form>
+            </div>
         </div>
     </div>
 </body>
