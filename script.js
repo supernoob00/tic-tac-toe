@@ -249,13 +249,15 @@
         };
         const getCurrentIndex = () => currentIndex;
         const getCurrentGameState = () => _history[currentIndex];
+        const getLatestGameState = () => _history[_history.length - 1];
         const clearHistory = () => {
             _history = [_history[0]];
             currentIndex = 0;
         };
-        const startNewGame = (startingGameState) => {
+        const startNewHistory = (startingGameState) => {
             currentIndex = 0;
             _history = [startingGameState];
+            startingGameState.getActivePlayer() === Players.getPlayerOne() ? Players.playerOneFirst() : Players.playerTwoFirst;
         };
 
         return {
@@ -267,13 +269,14 @@
             goForward,
             goToLatest,
             getCurrentGameState,
+            getLatestGameState,
             clearHistory,
-            startNewGame
+            startNewHistory
         }
     })();
 
-    // Takes a gamestate, makes a deep copy, mutates the copy, then returns it (really should be gamestatemodifier)
-    const GameController = function(gs, rowIndex, colIndex) {
+    // Takes a gamestate, makes a deep copy, mutates the copy, then returns it 
+    const GameStateModifier = function(gs, rowIndex, colIndex) {
 
         const _boardSize = gs.getGameBoard().getSize();
         const _countToWin = gs.getCountToWin();
@@ -417,6 +420,16 @@
         playTurn();
         return gameStateCopy;
     };
+
+    /*
+    const GameController = (function() {
+        const _gameHistory = GameStateHistory();
+        const startNewGame = (boardSize, countToWin, firstPlayer) {
+            const startingGameState = gameState(boardSize, countToWin, firstPlayer);
+            _gameHistory.clearHistory();
+        };
+    })();
+    */
   
     const boardDiv = document.querySelector(".board-container");
 
@@ -429,99 +442,132 @@
     const playerOneNameButton = document.getElementById("player-one-name-submit-button");
     const playerTwoNameButton = document.getElementById("player-two-name-submit-button");
 
-    const BoardDisplayController = (function() {
-        const makeDisplayCell = function(cell) {
-            const displayCell = document.createElement("div");
-            displayCell.classList.add("cell");
-            displayCell.dataset['rowIndex'] = cell.getRowIndex();
-            displayCell.dataset['colIndex'] = cell.getColIndex();
-            displayCell.textContent = cell.getToken();
-            return displayCell;
-        };
-        const clearBoardDisplay = function() {
-            while (boardDiv.hasChildNodes()) {
-                boardDiv.removeChild(boardDiv.lastChild);
-            }
-        };
-        const highlightWinSquares = function() {
-            const winningCells = GameStateHistory.getCurrentGameState().getWinningCells();
-            for (const i in winningCells) {
-                const rowIndex = winningCells[i].getRowIndex();
-                const colIndex = winningCells[i].getColIndex();
-                const wonDisplayCell = document.querySelector(`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`);
-                wonDisplayCell.classList.add("won");
-            }
-        };
-        const updateBoardDisplay = function() {
-            clearBoardDisplay();
-            // set board size
-            document.documentElement.style.setProperty("--board-size", GameStateHistory.getCurrentGameState().getSize());
-            // unnest grid to make it easier to work with
-            const flatGrid = GameStateHistory.getCurrentGameState().getGameBoard().getGrid().flat();
-            flatGrid.forEach(cell => {
-                const displayCell = makeDisplayCell(cell);
-                boardDiv.appendChild(displayCell);
-            });
-            if (GameStateHistory.getCurrentGameState().getIsGameOver()) {
-                highlightWinSquares();
-            }    
-        };
-        return {
-            updateBoardDisplay,
-        }
-    })();
 
-    const PlayersDisplayController = (function() {
-        const highlightActivePlayer = function() {
-            const playerOne = document.querySelector(".player-one-card");
-            const playerTwo = document.querySelector(".player-two-card");
-            if (GameStateHistory.getCurrentGameState().getActivePlayer() === Players.getPlayerOne()) {
-                playerTwo.classList.remove("active-player");
-                playerOne.classList.add("active-player");
+        const BoardDisplayController = (function() {
+            const makeDisplayCell = function(cell) {
+                const displayCell = document.createElement("div");
+                displayCell.classList.add("cell");
+                displayCell.dataset['rowIndex'] = cell.getRowIndex();
+                displayCell.dataset['colIndex'] = cell.getColIndex();
+                displayCell.textContent = cell.getToken();
+                return displayCell;
+            };
+            const clearBoardDisplay = function() {
+                while (boardDiv.hasChildNodes()) {
+                    boardDiv.removeChild(boardDiv.lastChild);
+                }
+            };
+            const highlightWinSquares = function() {
+                const winningCells = GameStateHistory.getCurrentGameState().getWinningCells();
+                for (const i in winningCells) {
+                    const rowIndex = winningCells[i].getRowIndex();
+                    const colIndex = winningCells[i].getColIndex();
+                    const wonDisplayCell = document.querySelector(`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`);
+                    wonDisplayCell.classList.add("won");
+                }
+            };
+            const updateBoardDisplay = function() {
+                clearBoardDisplay();
+                // set board size
+                document.documentElement.style.setProperty("--board-size", GameStateHistory.getCurrentGameState().getSize());
+                // unnest grid to make it easier to work with
+                const flatGrid = GameStateHistory.getCurrentGameState().getGameBoard().getGrid().flat();
+                flatGrid.forEach(cell => {
+                    const displayCell = makeDisplayCell(cell);
+                    boardDiv.appendChild(displayCell);
+                });
+                if (GameStateHistory.getCurrentGameState().getIsGameOver()) {
+                    highlightWinSquares();
+                }    
+            };
+            return {
+                updateBoardDisplay,
             }
-            else {
-                playerOne.classList.remove("active-player");
-                playerTwo.classList.add("active-player");
-            }
-        };
-        const updatePlayersDisplay = function() {
-            highlightActivePlayer();
-        };
-        return {
-            updatePlayersDisplay
-        };
-    })();
+        })();
+        const PlayersDisplayController = (function() {
+            const highlightActivePlayer = function() {
+                const playerOne = document.querySelector(".player-one-card");
+                const playerTwo = document.querySelector(".player-two-card");
+                if (GameStateHistory.getCurrentGameState().getActivePlayer() === Players.getPlayerOne()) {
+                    playerTwo.classList.remove("active-player");
+                    playerOne.classList.add("active-player");
+                }
+                else {
+                    playerOne.classList.remove("active-player");
+                    playerTwo.classList.add("active-player");
+                }
+            };
+            const showPlayerTokens = function() {
+                const playerOneTokenDisplay = document.querySelector(".player-one-token");
+                const playerTwoTokenDisplay = document.querySelector(".player-two-token");
+                playerOneTokenDisplay.textContent = `${Players.getPlayerOne().getPlayerToken()}`;
+                playerTwoTokenDisplay.textContent = `${Players.getPlayerTwo().getPlayerToken()}`;
+            };
+            const updatePlayersDisplay = function() {
+                showPlayerTokens()
+                highlightActivePlayer();
+            };
+            return {
+                updatePlayersDisplay
+            };
+        })();
+        const GameButtonsDisplayController = (function() {
+            let _gameHistoryButtonsEnabled = true;
 
-    const GameButtonsDisplayController = (function() {
-        const disableButton = function(gameButton) {
-            gameButton.disabled = true;
-            gameButton.classList.add("disabled-button");
-        };
-        const enableButton = function(gameButton) {
-            gameButton.disabled = false;
-            gameButton.classList.remove("disabled-button");
-        }
-        const updateGameButtonsDisplay = function() {
-            // re-enable all buttons first
-            for (const button of gameHistoryButtons) {
-                enableButton(button);
-            }
-            if (GameStateHistory.getCurrentIndex() === 0) {
-                disableButton(undoButton);
-                disableButton(toStartButton);
-            }
-            // redo button disabled if GameStateHistory current index is at the last index
-            // to end button disabled if redo button disabled
-            if (GameStateHistory.getCurrentIndex() === GameStateHistory.getHistory().length - 1) {
-                disableButton(redoButton);
-                disableButton(toLatestButton);
-            }
-        }
-        return {
-            updateGameButtonsDisplay
-        };
-    })();
+            const enableGameHistoryButtons = () => _gameHistoryButtonsEnabled = true;
+            const disableGameHistoryButtons = () => _gameHistoryButtonsEnabled = false;
 
+            const disableButton = function(gameButton) {
+                gameButton.disabled = true;
+                gameButton.classList.add("disabled-button");
+            };
+            const enableButton = function(gameButton) {
+                gameButton.disabled = false;
+                gameButton.classList.remove("disabled-button");
+            }
+            const updateGameButtonsDisplay = function() {
+                if (_gameHistoryButtonsEnabled) {
+                    // re-enable all buttons first
+                    for (const button of gameHistoryButtons) {
+                        enableButton(button);
+                    }
+                    if (GameStateHistory.getCurrentIndex() === 0) {
+                        disableButton(undoButton);
+                        disableButton(toStartButton);
+                    }
+                    // redo button disabled if GameStateHistory current index is at the last index
+                    // to end button disabled if redo button disabled
+                    if (GameStateHistory.getCurrentIndex() === GameStateHistory.getHistory().length - 1) {
+                        disableButton(redoButton);
+                        disableButton(toLatestButton);
+                    }
+                 }
+                    else {
+                        if (GameStateHistory.getLatestGameState().getIsGameOver()) {
+                            _gameHistoryButtonsEnabled = true;
+                            updateGameButtonsDisplay();
+                        }
+                        else {
+                            for (const button of gameHistoryButtons) {
+                            disableButton(button);
+                        }
+                    }
+                }
+            }
+
+            return {
+                enableGameHistoryButtons,
+                disableGameHistoryButtons,
+                updateGameButtonsDisplay,
+            };
+        })();
+
+        const updateGameDisplay = function() {
+            BoardDisplayController.updateBoardDisplay();
+            PlayersDisplayController.updatePlayersDisplay();
+            GameButtonsDisplayController.updateGameButtonsDisplay();
+        };
+    
     const boardListener = (function() {
         const boardListener = function(e) {
             const clickedRowIndex = e.target.dataset['rowIndex'];
@@ -535,12 +581,10 @@
             // run if game is NOT over
             if (!GameStateHistory.getCurrentGameState().getIsGameOver()) {
                 const currentGs = GameStateHistory.getCurrentGameState();
-                const newGameState = GameController(currentGs, parseInt(clickedRowIndex), parseInt(clickedColIndex));
+                const newGameState = GameStateModifier(currentGs, parseInt(clickedRowIndex), parseInt(clickedColIndex));
                 GameStateHistory.addToHistory(newGameState);
 
-                BoardDisplayController.updateBoardDisplay();
-                PlayersDisplayController.updatePlayersDisplay();
-                GameButtonsDisplayController.updateGameButtonsDisplay();
+                updateGameDisplay();
             }
             else {
                 return;
@@ -567,9 +611,7 @@
                     break;
             }
 
-            BoardDisplayController.updateBoardDisplay();
-            PlayersDisplayController.updatePlayersDisplay();
-            GameButtonsDisplayController.updateGameButtonsDisplay();
+            updateGameDisplay();
         };
         for (const button of gameHistoryButtons) {
             button.addEventListener("click", gameButtonAction);
@@ -587,15 +629,11 @@
 
 
 // first screen update using default 3x3 board
-BoardDisplayController.updateBoardDisplay();
-PlayersDisplayController.updatePlayersDisplay();
-GameButtonsDisplayController.updateGameButtonsDisplay();
+updateGameDisplay();
 
 
 
 
-
-/*
 
 const NewGameFormController = (function() {
     const gameOptionsForm = document.querySelector("#game-options-form");
@@ -621,21 +659,13 @@ const NewGameFormController = (function() {
         return firstPlayer;
     };
 
-
     const formUndoEnabled = function() {
-        const undoButtons = document.querySelectorAll(".game-button");
         const undoEnabled = gameOptionsForm["undo"]
             if (undoEnabled.checked) {
-                for (const button of undoButtons) {
-                    button.disabled = false;
-                    button.querySelector(".toolbar-icon").classList.remove("disabled-icon");
-                }
+               GameButtonsDisplayController.enableGameHistoryButtons();
             }
             else {
-                for (const button of undoButtons) {
-                    button.disabled = true;
-                    button.classList.add("disabled-icon");
-                }
+                GameButtonsDisplayController.disableGameHistoryButtons();
             }
     };
 
@@ -644,20 +674,21 @@ const NewGameFormController = (function() {
         e.preventDefault();
         const boardSize = formBoardSize();
         const firstPlayer = formFirstPlayer();
+        firstPlayer === Players.getPlayerOne() ? Players.playerOneFirst() : Players.playerTwoFirst();
         const startingGameState = gameState(boardSize, COUNTS_TO_WIN[`${boardSize}`], firstPlayer);
-        GameStateHistory.startNewGame(startingGameState);
-        BoardDisplayController.updateBoardDisplay();
-
         formUndoEnabled();
+        GameStateHistory.startNewHistory(startingGameState);
+        updateGameDisplay();
+
+       
     }
 
     gameOptionsForm.addEventListener("submit", startNewGame);
-    return gameOptionsForm;
 
 })();
 
 
-*/
+
 
 
 
