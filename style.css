@@ -79,8 +79,13 @@ body {
 }
 
 .game-button {
+    fill: black;
     padding: 0.5rem;
     background-color: white;
+}
+
+.disabled-button {
+    fill: lightgrey;
 }
 
 .toolbar-icon {

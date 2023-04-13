@@ -36,21 +36,17 @@
         </div>
         <div class="board-container"></div>
         <div class="bottom-toolbar">
-            <button class="game-button to-start">
-                <img class="toolbar-icon" src="./icons/angle-double-left-svgrepo-com.svg">
+            <button class="game-button game-history-button to-start">
+                <svg class="toolbar-icon" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M17,14.3L14.7,12L17,9.7c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-3,3c0,0,0,0,0,0c-0.4,0.4-0.4,1,0,1.4l3,3c0.2,0.2,0.4,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3C17.3,15.3,17.3,14.7,17,14.3z M9.2,12l2.3-2.3c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-3,3c0,0,0,0,0,0c-0.4,0.4-0.4,1,0,1.4l3,3c0.2,0.2,0.4,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4L9.2,12z"/></svg>
             </button>
-            <button class="game-button undo">
-                <img class="toolbar-icon" src="./icons/angle-left-svgrepo-com.svg">
+            <button class="game-button game-history-button undo">
+                <svg class="toolbar-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M11.3,12l3.5-3.5c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-4.2,4.2l0,0c-0.4,0.4-0.4,1,0,1.4l4.2,4.2c0.2,0.2,0.4,0.3,0.7,0.3l0,0c0.3,0,0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4L11.3,12z"/></svg>
             </button>
-            <button class="game-button redo">
-                <img class="toolbar-icon" src="./icons/angle-right-svgrepo-com.svg">
+            <button class="game-button game-history-button redo">
+                <svg class="toolbar-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M9.9,17.2c-0.6,0-1-0.4-1-1c0-0.3,0.1-0.5,0.3-0.7l3.5-3.5L9.2,8.5c-0.4-0.4-0.4-1,0-1.4c0.4-0.4,1-0.4,1.4,0l4.2,4.2c0.4,0.4,0.4,1,0,1.4c0,0,0,0,0,0l-4.2,4.2C10.4,17.1,10.1,17.2,9.9,17.2z"/></svg>
             </button>
-            <button class="game-button to-latest">
-                <img class="toolbar-icon" src="./icons/angle-double-right-svgrepo-com.svg">
-            </button>
-            <button class="game-button new-game">
-                <span>New Game</span>
-                <img class="dropdown-icon" src="./icons/arrow-down-drop-circle-outline.svg">
+            <button class="game-button game-history-button to-latest">
+                <svg class="toolbar-icon" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M8.5,8.3c-0.4-0.4-1-0.4-1.4,0c-0.4,0.4-0.4,1,0,1.4L9.3,12L7,14.3c-0.2,0.2-0.3,0.4-0.3,0.7c0,0.6,0.4,1,1,1c0.3,0,0.5-0.1,0.7-0.3l3-3c0,0,0,0,0,0c0.4-0.4,0.4-1,0-1.4L8.5,8.3z M17,11.3l-3-3c-0.4-0.4-1-0.4-1.4,0c-0.4,0.4-0.4,1,0,1.4l2.3,2.3l-2.3,2.3c-0.2,0.2-0.3,0.4-0.3,0.7c0,0.6,0.4,1,1,1c0.3,0,0.5-0.1,0.7-0.3l3-3C17.3,12.3,17.3,11.7,17,11.3z"/></svg>
             </button>
             <div class="new-game-dropdown">
                 <form id="game-options-form">
@@ -73,15 +69,7 @@
                     </div>
                     <div class="field">
                         <label for="undo-button-toggle">Undo/Redo</label>
-                        <input type="checkbox" id="undo-button-toggle" name="undo" value="undo-enabled">
-                    </div>
-                    <div class="field">
-                        <label for="sound-toggle">Sound</label>
-                        <input type="checkbox" id="sound-toggle" name="sound" value="sound-enabled">
-                    </div>
-                    <div class="field">
-                        <label type="checkbox" id="night-mode-toggle">Night Mode</label>
-                        <input type="checkbox" id="night-mode-toggle" name="night-mode" value="night-mode-enabled">
+                        <input type="checkbox" id="undo-button-toggle" name="undo" checked="checked">
                     </div>
                     <button type="submit" class="new-game-button">New Game</button>
                 </form>

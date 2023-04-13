@@ -62,7 +62,6 @@
             return mainDiags;
         };
     
-
         return {
                 rows,
                 cols,
@@ -138,9 +137,10 @@
 
     const player = function(name, token) {
         let _playerName = name;
-        const _playerToken = token;
+        let _playerToken = token;
         const getName = () => _playerName;
         const getPlayerToken = () => _playerToken;
+        const setPlayerToken = (newToken) => _playerToken = newToken;
         const _record = {
             wins: 0,
             losses: 0,
@@ -153,13 +153,43 @@
         return {
             getName,
             getPlayerToken,
+            setPlayerToken,
             winGame,
             getRecord,
             setName
         };
     };
 
-    const Players = [player("Player1", TOKENS.CROSS), player("Player2", TOKENS.NAUGHT)];
+    const Players = (function() {
+        const _playerList = [player("Player1", TOKENS.CROSS), player("Player2", TOKENS.NAUGHT)];
+        const getPlayerOne = () => _playerList[0];
+        const getPlayerTwo = () => _playerList[1];
+        const setPlayerTokens = (playerOneToken, playerTwoToken) => {
+            _playerList[0].setPlayerToken(playerOneToken);
+            _playerList[1].setPlayerToken(playerTwoToken);
+        };
+        const playerOneFirst = () => {
+            _playerList[0].setPlayerToken(TOKENS.CROSS);
+            _playerList[1].setPlayerToken(TOKENS.NAUGHT);
+        };
+        const playerTwoFirst = () => {
+            _playerList[0].setPlayerToken(TOKENS.NAUGHT);
+            _playerList[1].setPlayerToken(TOKENS.CROSS);
+        };
+        const getFirstPlayer = () => {
+            return _playerList[0].getPlayerToken() === TOKENS.CROSS ? _playerList[0] : _playerList[1];
+        };
+
+
+        return {
+            getPlayerOne,
+            getPlayerTwo,
+            setPlayerTokens,
+            playerOneFirst,
+            playerTwoFirst,
+            getFirstPlayer,
+        };
+    })();
 
     // All info about the game in a 'snapshot'
     const gameState = (function(size, countToWin, activePlayer) {
@@ -170,14 +200,7 @@
         const getCountToWin = () => _countToWin;
         let _activePlayer = activePlayer;
         const getActivePlayer = () => _activePlayer;
-        const switchActivePlayer = function() {
-            if (_activePlayer === Players[0]) {
-                _activePlayer = Players[1];
-            }
-            else {
-                _activePlayer = Players[0];
-            }
-        };
+        const setActivePlayer = (newActive) => _activePlayer = newActive;
         let _isGameOver = false;
         const getIsGameOver = () => _isGameOver;
         const gameOver = () => _isGameOver = true;
@@ -188,12 +211,6 @@
                 _winningCells.push(cells[i]);
             }
         };
-        const reset = function() {
-            _gameBoard.clearGrid();
-            switchActivePlayer();
-            _isGameOver = false;
-            _winningCells = [];
-        };
 
         return {
             getSize,
@@ -202,17 +219,16 @@
             gameOver,
             getIsGameOver,
             getActivePlayer, 
-            switchActivePlayer,
+            setActivePlayer,
             setWinningCells,
             getWinningCells,
-            reset
         };
     });
 
     const GameStateHistory = (function() {
         let currentIndex = 0;
         // history has starting gamestate
-        let _history = [gameState(3, 3, Players[0])];
+        let _history = [gameState(3, 3, Players.getPlayerOne())];
         const getHistory = () => _history;
         const addToHistory = (gs) => {
             currentIndex++;
@@ -282,12 +298,7 @@
                 gameStateCopy.gameOver();
             }
     
-            /*
-            // match activePlayer
-            if (gameStateCopy.getActivePlayer() !== gs.getActivePlayer()) {
-                gameStateCopy.switchActivePlayer();
-            }
-            */
+
     
             return gameStateCopy;
         }
@@ -364,6 +375,15 @@
             return true;
         };
 
+        const switchActivePlayer = function() {
+            if (gameStateCopy.getActivePlayer() === Players.getPlayerOne()) {
+                gameStateCopy.setActivePlayer(Players.getPlayerTwo());
+            }
+            else {
+                gameStateCopy.setActivePlayer(Players.getPlayerOne());
+            }
+        };
+
         const placeToken = function() {
             const chosenCell = gameStateCopy.getGameBoard().getCell(rowIndex, colIndex);
             const activePlayerName = gameStateCopy.getActivePlayer().getName(); 
@@ -386,7 +406,7 @@
                     gameStateCopy.gameOver();
                 }
                 else {
-                    gameStateCopy.switchActivePlayer();
+                    switchActivePlayer();
                 }
             }
             else {
@@ -397,11 +417,19 @@
         playTurn();
         return gameStateCopy;
     };
-    
-    const GameDisplayController = (function() {
+  
+    const boardDiv = document.querySelector(".board-container");
 
-        const boardDiv = document.querySelector(".board-container");
+    const gameHistoryButtons = document.querySelectorAll(".game-history-button");
+    const toStartButton = document.querySelector(".to-start");
+    const undoButton = document.querySelector(".undo");
+    const redoButton = document.querySelector(".redo");
+    const toLatestButton = document.querySelector(".to-latest");
 
+    const playerOneNameButton = document.getElementById("player-one-name-submit-button");
+    const playerTwoNameButton = document.getElementById("player-two-name-submit-button");
+
+    const BoardDisplayController = (function() {
         const makeDisplayCell = function(cell) {
             const displayCell = document.createElement("div");
             displayCell.classList.add("cell");
@@ -410,18 +438,11 @@
             displayCell.textContent = cell.getToken();
             return displayCell;
         };
-
         const clearBoardDisplay = function() {
             while (boardDiv.hasChildNodes()) {
                 boardDiv.removeChild(boardDiv.lastChild);
             }
         };
-
-        const startNewGame = function() {
-            GameStateHistory.clearHistory();
-            updateBoardDisplay();
-        };
-
         const highlightWinSquares = function() {
             const winningCells = GameStateHistory.getCurrentGameState().getWinningCells();
             for (const i in winningCells) {
@@ -431,7 +452,6 @@
                 wonDisplayCell.classList.add("won");
             }
         };
-
         const updateBoardDisplay = function() {
             clearBoardDisplay();
             // set board size
@@ -444,12 +464,18 @@
             });
             if (GameStateHistory.getCurrentGameState().getIsGameOver()) {
                 highlightWinSquares();
-            }
+            }    
+        };
+        return {
+            updateBoardDisplay,
+        }
+    })();
 
-            // highlight active player
+    const PlayersDisplayController = (function() {
+        const highlightActivePlayer = function() {
             const playerOne = document.querySelector(".player-one-card");
             const playerTwo = document.querySelector(".player-two-card");
-            if (GameStateHistory.getCurrentGameState().getActivePlayer() === Players[0]) {
+            if (GameStateHistory.getCurrentGameState().getActivePlayer() === Players.getPlayerOne()) {
                 playerTwo.classList.remove("active-player");
                 playerOne.classList.add("active-player");
             }
@@ -458,9 +484,46 @@
                 playerTwo.classList.add("active-player");
             }
         };
-        
-        const boardListener = function(e) {
+        const updatePlayersDisplay = function() {
+            highlightActivePlayer();
+        };
+        return {
+            updatePlayersDisplay
+        };
+    })();
 
+    const GameButtonsDisplayController = (function() {
+        const disableButton = function(gameButton) {
+            gameButton.disabled = true;
+            gameButton.classList.add("disabled-button");
+        };
+        const enableButton = function(gameButton) {
+            gameButton.disabled = false;
+            gameButton.classList.remove("disabled-button");
+        }
+        const updateGameButtonsDisplay = function() {
+            // re-enable all buttons first
+            for (const button of gameHistoryButtons) {
+                enableButton(button);
+            }
+            if (GameStateHistory.getCurrentIndex() === 0) {
+                disableButton(undoButton);
+                disableButton(toStartButton);
+            }
+            // redo button disabled if GameStateHistory current index is at the last index
+            // to end button disabled if redo button disabled
+            if (GameStateHistory.getCurrentIndex() === GameStateHistory.getHistory().length - 1) {
+                disableButton(redoButton);
+                disableButton(toLatestButton);
+            }
+        }
+        return {
+            updateGameButtonsDisplay
+        };
+    })();
+
+    const boardListener = (function() {
+        const boardListener = function(e) {
             const clickedRowIndex = e.target.dataset['rowIndex'];
             const clickedColIndex = e.target.dataset['colIndex'];
 
@@ -474,127 +537,127 @@
                 const currentGs = GameStateHistory.getCurrentGameState();
                 const newGameState = GameController(currentGs, parseInt(clickedRowIndex), parseInt(clickedColIndex));
                 GameStateHistory.addToHistory(newGameState);
-                updateBoardDisplay();
+
+                BoardDisplayController.updateBoardDisplay();
+                PlayersDisplayController.updatePlayersDisplay();
+                GameButtonsDisplayController.updateGameButtonsDisplay();
             }
             else {
                 return;
             }
         };
-
         boardDiv.addEventListener("click", boardListener);
-
-        return {
-            boardDiv,
-            startNewGame,
-            updateBoardDisplay,
-        };
     })();
 
-    const GameButtonsController = (function() {
-        const newGameButton = document.querySelector(".new-game");
-        const undoButton = document.querySelector(".undo");
-        const toStartButton = document.querySelector(".to-start");
-        const redoButton = document.querySelector(".redo");
-        const toLatestButton = document.querySelector(".to-latest");
-        const playerOneNameButton = document.getElementById("player-one-name-submit-button");
-        const playerTwoNameButton = document.getElementById("player-two-name-submit-button");
+    const gameHistoryButtonsListener = (function() {
+        const gameButtonAction = function(e) {
+            const chosenButton = e.currentTarget;
+            switch (chosenButton) {
+                case toStartButton : 
+                    GameStateHistory.goToStart();
+                    break;
+                case undoButton :
+                    GameStateHistory.goBack();
+                    break;
+                case redoButton :
+                    GameStateHistory.goForward();
+                    break;
+                case toLatestButton :
+                    GameStateHistory.goToLatest();
+                    break;
+            }
 
-        
-
-        const startNewGame = function(e) {
-            console.log("New game started.");
-            GameDisplayController.startNewGame();
-            GameDisplayController.updateBoardDisplay();
+            BoardDisplayController.updateBoardDisplay();
+            PlayersDisplayController.updatePlayersDisplay();
+            GameButtonsDisplayController.updateGameButtonsDisplay();
         };
-
-        const undoMove = function(e) {
-            console.log("Went back one move.");
-            GameStateHistory.goBack();
-            GameDisplayController.updateBoardDisplay();
-        };
-
-        const goToStart = function(e) {
-            GameStateHistory.goToStart();
-            GameDisplayController.updateBoardDisplay();
-        };
-
-        const redoMove = function(e) {
-            console.log("Went forward one move.");
-            GameStateHistory.goForward();
-            GameDisplayController.updateBoardDisplay();
+        for (const button of gameHistoryButtons) {
+            button.addEventListener("click", gameButtonAction);
         }
+    })();
 
-        const goToLatest = function(e) {
-            GameStateHistory.goToLatest();
-            GameDisplayController.updateBoardDisplay();
-        }
-
-        const setPlayerOneName = function(e) {
-            const playerName = document.getElementById("player-one-name").value;
-            Players[0].setName(playerName);
-        }
-
-        const setPlayerTwoName = function(e) {
-            const playerName = document.getElementById("player-two-name").value;
-            Players[1].setName(playerName);
-        }
-
-        newGameButton.addEventListener("click", startNewGame);
-        undoButton.addEventListener("click", undoMove);
-        toStartButton.addEventListener("click", goToStart);
-        redoButton.addEventListener("click", redoMove);
-        toLatestButton.addEventListener("click", goToLatest);
+    const playersListener = function() {
         playerOneNameButton.addEventListener("click", setPlayerOneName);
         playerTwoNameButton.addEventListener("click", setPlayerTwoName);
-    })();
+    };
+
+
+
+   
+
 
 // first screen update using default 3x3 board
-GameDisplayController.startNewGame();
+BoardDisplayController.updateBoardDisplay();
+PlayersDisplayController.updatePlayersDisplay();
+GameButtonsDisplayController.updateGameButtonsDisplay();
 
 
 
-const optionsSubmitButton = document.querySelector(".new-game-button");
 
-const gameOptionsForm = document.querySelector("#game-options-form");
 
-const startNewGame = function(e) {
-    e.preventDefault();
-    const boardSize = parseInt(gameOptionsForm["board-size"].value);
-    const firstPlayerValue = gameOptionsForm["first-player"].value;
-    const soundEnabledValue = gameOptionsForm["sound"].value;
-    const undoEnabledValue = gameOptionsForm["undo"].value;
-    const nightModeEnabledValue = gameOptionsForm["night-mode"].value;
+/*
 
-    const firstPlayerOption = (function() {
+const NewGameFormController = (function() {
+    const gameOptionsForm = document.querySelector("#game-options-form");
+
+    const formBoardSize = function() {
+        const boardSize = parseInt(gameOptionsForm["board-size"].value);
+        return boardSize;
+    };
+
+    const formFirstPlayer = function() {
+        const firstPlayerValue = gameOptionsForm["first-player"].value;
         let firstPlayer;
         if (firstPlayerValue === "player-one") {
-            firstPlayer = Players[0];
+            firstPlayer = Players.getPlayerOne();
         }
         else if (firstPlayerValue === "player-two") {
-            firstPlayer = Players[1];
+            firstPlayer = Players.getPlayerTwo();
+        }
+        else if (firstPlayerValue === "random") {
+            const coinFlip = Math.floor(Math.random() * 2);
+            coinFlip === 0 ? firstPlayer = Players.getPlayerOne() : firstPlayer = Players.getPlayerTwo();
         }
         return firstPlayer;
-    })();
+    };
 
-    const isSoundEnabled = function() {
-        return (soundEnabledValue === "sound-enabled") ? true : false;
+
+    const formUndoEnabled = function() {
+        const undoButtons = document.querySelectorAll(".game-button");
+        const undoEnabled = gameOptionsForm["undo"]
+            if (undoEnabled.checked) {
+                for (const button of undoButtons) {
+                    button.disabled = false;
+                    button.querySelector(".toolbar-icon").classList.remove("disabled-icon");
+                }
+            }
+            else {
+                for (const button of undoButtons) {
+                    button.disabled = true;
+                    button.classList.add("disabled-icon");
+                }
+            }
+    };
+
+
+    const startNewGame = function(e) {
+        e.preventDefault();
+        const boardSize = formBoardSize();
+        const firstPlayer = formFirstPlayer();
+        const startingGameState = gameState(boardSize, COUNTS_TO_WIN[`${boardSize}`], firstPlayer);
+        GameStateHistory.startNewGame(startingGameState);
+        BoardDisplayController.updateBoardDisplay();
+
+        formUndoEnabled();
     }
 
-    const isUndoEnabled = function() {
-        return (undoEnabledValue === "undo-enabled") ? true : false;
-    };
+    gameOptionsForm.addEventListener("submit", startNewGame);
+    return gameOptionsForm;
 
-    const isNightModeEnabled = function() {
-        return (nightModeEnabledValue === "night-mode-enabled") ? true : false;
-    };
+})();
 
-    const startingGameState = gameState(boardSize, COUNTS_TO_WIN[`${boardSize}`], firstPlayerOption);
-    GameStateHistory.startNewGame(startingGameState);
-    GameDisplayController.updateBoardDisplay();
-};
 
-gameOptionsForm.addEventListener("submit", startNewGame);
-
+*/
 
 
 
