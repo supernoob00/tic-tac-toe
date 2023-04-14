@@ -48,6 +48,10 @@ body {
     padding: 1em;
 }
 
+.hidden {
+    display: none;
+}
+
 .board-container {
     width: 30em;
     height: 30em;

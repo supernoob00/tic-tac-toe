@@ -168,11 +168,11 @@
             _playerList[0].setPlayerToken(playerOneToken);
             _playerList[1].setPlayerToken(playerTwoToken);
         };
-        const playerOneFirst = () => {
+        const setPlayerOneFirst = () => {
             _playerList[0].setPlayerToken(TOKENS.CROSS);
             _playerList[1].setPlayerToken(TOKENS.NAUGHT);
         };
-        const playerTwoFirst = () => {
+        const setPlayerTwoFirst = () => {
             _playerList[0].setPlayerToken(TOKENS.NAUGHT);
             _playerList[1].setPlayerToken(TOKENS.CROSS);
         };
@@ -185,8 +185,8 @@
             getPlayerOne,
             getPlayerTwo,
             setPlayerTokens,
-            playerOneFirst,
-            playerTwoFirst,
+            setPlayerOneFirst,
+            setPlayerTwoFirst,
             getFirstPlayer,
         };
     })();
@@ -205,6 +205,8 @@
         const getIsGameOver = () => _isGameOver;
         const gameOver = () => _isGameOver = true;
         let _winningCells = [];
+        const isGameWon = () => _winningCells.length > 0;
+        const isGameTied = () => _isGameOver && !isGameWon();
         const getWinningCells = () => _winningCells;
         const setWinningCells = (cells) => {
             for (let i in cells) {
@@ -220,15 +222,18 @@
             getIsGameOver,
             getActivePlayer, 
             setActivePlayer,
+            isGameWon,
+            isGameTied,
             setWinningCells,
             getWinningCells,
         };
     });
 
-    const GameStateHistory = (function() {
+    // a Game is composed of game states
+    const GameStateHistory = function(startingGameState) {
         let currentIndex = 0;
         // history has starting gamestate
-        let _history = [gameState(3, 3, Players.getPlayerOne())];
+        let _history = [startingGameState];
         const getHistory = () => _history;
         const addToHistory = (gs) => {
             currentIndex++;
@@ -248,6 +253,7 @@
             currentIndex = _history.length - 1;
         };
         const getCurrentIndex = () => currentIndex;
+        const getLastIndex = () => _history.length - 1;
         const getCurrentGameState = () => _history[currentIndex];
         const getLatestGameState = () => _history[_history.length - 1];
         const clearHistory = () => {
@@ -259,9 +265,12 @@
             _history = [startingGameState];
             startingGameState.getActivePlayer() === Players.getPlayerOne() ? Players.playerOneFirst() : Players.playerTwoFirst;
         };
+        const isGameWon = () => getLatestGameState().isGameWon();
+        const isGameTied = () => getLatestGameState().isGameTied();
 
         return {
             getCurrentIndex,
+            getLastIndex,
             getHistory,
             addToHistory,
             goBack,
@@ -271,9 +280,11 @@
             getCurrentGameState,
             getLatestGameState,
             clearHistory,
-            startNewHistory
+            startNewHistory,
+            isGameWon,
+            isGameTied,
         }
-    })();
+    };
 
     // Takes a gamestate, makes a deep copy, mutates the copy, then returns it 
     const GameStateModifier = function(gs, rowIndex, colIndex) {
@@ -421,26 +432,36 @@
         return gameStateCopy;
     };
 
-    /*
+
     const GameController = (function() {
-        const _gameHistory = GameStateHistory();
-        const startNewGame = (boardSize, countToWin, firstPlayer) {
+        const defaultGame = GameStateHistory(gameState(3, 3, Players.getPlayerOne()))
+        let _currentGame = defaultGame;
+        const _playedGames = [];
+        const getCurrentGame = () => _currentGame;
+        const getCurrentTurn = () => _currentGame.getCurrentGameState();
+        const startNewGame = (boardSize, countToWin, firstPlayer) => {
             const startingGameState = gameState(boardSize, countToWin, firstPlayer);
-            _gameHistory.clearHistory();
+            _currentGame = GameStateHistory(startingGameState);
+            firstPlayer === Players.getPlayerOne() ? Players.setPlayerOneFirst() : Players.setPlayerTwoFirst();
+        };
+        return {
+            getCurrentGame,
+            getCurrentTurn,
+            startNewGame
         };
     })();
-    */
+
   
     const boardDiv = document.querySelector(".board-container");
 
     const gameHistoryButtons = document.querySelectorAll(".game-history-button");
     const toStartButton = document.querySelector(".to-start");
-    const undoButton = document.querySelector(".undo");
-    const redoButton = document.querySelector(".redo");
+    const backButton = document.querySelector(".back");
+    const forwardButton = document.querySelector(".forward");
     const toLatestButton = document.querySelector(".to-latest");
 
-    const playerOneNameButton = document.getElementById("player-one-name-submit-button");
-    const playerTwoNameButton = document.getElementById("player-two-name-submit-button");
+    const playerOneNameButton = document.querySelector(".player-one-name");
+    const playerTwoNameButton = document.querySelector(".player-two-name");
 
 
         const BoardDisplayController = (function() {
@@ -458,7 +479,7 @@
                 }
             };
             const highlightWinSquares = function() {
-                const winningCells = GameStateHistory.getCurrentGameState().getWinningCells();
+                const winningCells = GameController.getCurrentTurn().getWinningCells();
                 for (const i in winningCells) {
                     const rowIndex = winningCells[i].getRowIndex();
                     const colIndex = winningCells[i].getColIndex();
@@ -469,14 +490,14 @@
             const updateBoardDisplay = function() {
                 clearBoardDisplay();
                 // set board size
-                document.documentElement.style.setProperty("--board-size", GameStateHistory.getCurrentGameState().getSize());
+                document.documentElement.style.setProperty("--board-size", GameController.getCurrentTurn().getSize());
                 // unnest grid to make it easier to work with
-                const flatGrid = GameStateHistory.getCurrentGameState().getGameBoard().getGrid().flat();
+                const flatGrid = GameController.getCurrentTurn().getGameBoard().getGrid().flat();
                 flatGrid.forEach(cell => {
                     const displayCell = makeDisplayCell(cell);
                     boardDiv.appendChild(displayCell);
                 });
-                if (GameStateHistory.getCurrentGameState().getIsGameOver()) {
+                if (GameController.getCurrentTurn().getIsGameOver()) {
                     highlightWinSquares();
                 }    
             };
@@ -484,11 +505,12 @@
                 updateBoardDisplay,
             }
         })();
+
         const PlayersDisplayController = (function() {
             const highlightActivePlayer = function() {
                 const playerOne = document.querySelector(".player-one-card");
                 const playerTwo = document.querySelector(".player-two-card");
-                if (GameStateHistory.getCurrentGameState().getActivePlayer() === Players.getPlayerOne()) {
+                if (GameController.getCurrentTurn().getActivePlayer() === Players.getPlayerOne()) {
                     playerTwo.classList.remove("active-player");
                     playerOne.classList.add("active-player");
                 }
@@ -503,14 +525,61 @@
                 playerOneTokenDisplay.textContent = `${Players.getPlayerOne().getPlayerToken()}`;
                 playerTwoTokenDisplay.textContent = `${Players.getPlayerTwo().getPlayerToken()}`;
             };
+            const updatePlayerNames = function() {
+                const playerOneName = document.querySelector(".player-one-name");
+                const playerTwoName = document.querySelector(".player-two-name");
+
+                playerOneName.textContent = Players.getPlayerOne().getName();
+                playerTwoName.textContent = Players.getPlayerTwo.getName();
+            };
+            const togglePlayerOneNameField = function() {
+                const playerOneNameField = document.querySelector(".player-one-name-field");
+                playerOneNameField.classList.toggle("hidden");
+            };
+            const togglePlayerTwoNameField = function() {
+                const playerTwoNameField = document.querySelector(".player-two-name-field");
+                playerTwoNameField.classList.toggle("hidden");
+            };
+            const showWinningPlayer = function() {
+                const playerOneWinIcon = document.querySelector(".player-one-win-icon");
+                const playerTwoWinIcon = document.querySelector(".player-two-win-icon");
+                // a player won
+                if (GameController.getCurrentGame().isGameWon()) {
+                    const winningPlayer = GameController.getCurrentGame().getLatestGameState().getActivePlayer();
+                    switch (winningPlayer) {
+                        case Players.getPlayerOne() : 
+                            playerOneWinIcon.classList.remove("hidden");
+                            playerTwoWinIcon.classList.add("hidden");
+                            break;
+                        case Players.getPlayerTwo() : 
+                            playerOneWinIcon.classList.add("hidden");
+                            playerTwoWinIcon.classList.remove("hidden");
+                            break;
+                    }
+                }
+                else if (GameController.getCurrentGame().isGameTied()) {
+                    const resultInfo = document.querySelector(".game-result-info");
+                    resultInfo.textContent = "Game is tied.";
+                }
+                else {
+                    playerOneWinIcon.classList.add("hidden");
+                    playerTwoWinIcon.classList.add("hidden");
+                }
+            };
             const updatePlayersDisplay = function() {
                 showPlayerTokens()
                 highlightActivePlayer();
+                showWinningPlayer();
             };
             return {
-                updatePlayersDisplay
+                updatePlayersDisplay,
+                updatePlayerNames,
+                togglePlayerOneNameField,
+                togglePlayerTwoNameField,
+                showWinningPlayer,
             };
         })();
+
         const GameButtonsDisplayController = (function() {
             let _gameHistoryButtonsEnabled = true;
 
@@ -531,19 +600,19 @@
                     for (const button of gameHistoryButtons) {
                         enableButton(button);
                     }
-                    if (GameStateHistory.getCurrentIndex() === 0) {
-                        disableButton(undoButton);
+                    if (GameController.getCurrentGame().getCurrentIndex() === 0) {
+                        disableButton(backButton);
                         disableButton(toStartButton);
                     }
                     // redo button disabled if GameStateHistory current index is at the last index
                     // to end button disabled if redo button disabled
-                    if (GameStateHistory.getCurrentIndex() === GameStateHistory.getHistory().length - 1) {
-                        disableButton(redoButton);
+                    if (GameController.getCurrentGame().getCurrentIndex() === GameController.getCurrentGame().getLastIndex()) {
+                        disableButton(forwardButton);
                         disableButton(toLatestButton);
                     }
                  }
                     else {
-                        if (GameStateHistory.getLatestGameState().getIsGameOver()) {
+                        if (GameController.getCurrentGame().getLatestGameState().getIsGameOver()) {
                             _gameHistoryButtonsEnabled = true;
                             updateGameButtonsDisplay();
                         }
@@ -579,10 +648,10 @@
             }
 
             // run if game is NOT over
-            if (!GameStateHistory.getCurrentGameState().getIsGameOver()) {
-                const currentGs = GameStateHistory.getCurrentGameState();
+            if (!GameController.getCurrentTurn().getIsGameOver()) {
+                const currentGs = GameController.getCurrentTurn();
                 const newGameState = GameStateModifier(currentGs, parseInt(clickedRowIndex), parseInt(clickedColIndex));
-                GameStateHistory.addToHistory(newGameState);
+                GameController.getCurrentGame().addToHistory(newGameState);
 
                 updateGameDisplay();
             }
@@ -598,16 +667,16 @@
             const chosenButton = e.currentTarget;
             switch (chosenButton) {
                 case toStartButton : 
-                    GameStateHistory.goToStart();
+                    GameController.getCurrentGame().goToStart();
                     break;
-                case undoButton :
-                    GameStateHistory.goBack();
+                case backButton :
+                    GameController.getCurrentGame().goBack();
                     break;
-                case redoButton :
-                    GameStateHistory.goForward();
+                case forwardButton :
+                    GameController.getCurrentGame().goForward();
                     break;
                 case toLatestButton :
-                    GameStateHistory.goToLatest();
+                    GameController.getCurrentGame().goToLatest();
                     break;
             }
 
@@ -618,10 +687,21 @@
         }
     })();
 
-    const playersListener = function() {
-        playerOneNameButton.addEventListener("click", setPlayerOneName);
-        playerTwoNameButton.addEventListener("click", setPlayerTwoName);
-    };
+    const playersListener = (function() {
+        const playerButtonAction = function(e) {
+            const button = e.currentTarget;
+            switch (button) {
+                case playerOneNameButton : 
+                    PlayersDisplayController.togglePlayerOneNameField();
+                    break;
+                case playerTwoNameButton :
+                    PlayersDisplayController.togglePlayerTwoNameField();
+                    break;
+            }
+        }
+        playerOneNameButton.addEventListener("click", playerButtonAction);
+        playerTwoNameButton.addEventListener("click", playerButtonAction);
+    })();
 
 
 
@@ -659,9 +739,9 @@ const NewGameFormController = (function() {
         return firstPlayer;
     };
 
-    const formUndoEnabled = function() {
-        const undoEnabled = gameOptionsForm["undo"]
-            if (undoEnabled.checked) {
+    const formPracticeModeEnabled = function() {
+        const practiceModeEnabled = gameOptionsForm["practice-mode"]
+            if (practiceModeEnabled.checked) {
                GameButtonsDisplayController.enableGameHistoryButtons();
             }
             else {
@@ -674,13 +754,9 @@ const NewGameFormController = (function() {
         e.preventDefault();
         const boardSize = formBoardSize();
         const firstPlayer = formFirstPlayer();
-        firstPlayer === Players.getPlayerOne() ? Players.playerOneFirst() : Players.playerTwoFirst();
-        const startingGameState = gameState(boardSize, COUNTS_TO_WIN[`${boardSize}`], firstPlayer);
-        formUndoEnabled();
-        GameStateHistory.startNewHistory(startingGameState);
+        formPracticeModeEnabled();
+        GameController.startNewGame(boardSize, COUNTS_TO_WIN[`${boardSize}`], firstPlayer);
         updateGameDisplay();
-
-       
     }
 
     gameOptionsForm.addEventListener("submit", startNewGame);
