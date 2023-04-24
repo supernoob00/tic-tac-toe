@@ -139,29 +139,22 @@
         let _playerName = name;
         let _playerToken = token;
         const getName = () => _playerName;
+        const setName = (newName) => _playerName = newName;
         const getPlayerToken = () => _playerToken;
         const setPlayerToken = (newToken) => _playerToken = newToken;
-        const _record = {
-            wins: 0,
-            losses: 0,
-            ties: 0,
-        };
         const winGame = () => {_record.wins++};
-        const getRecord = () => _record;
-        const setName = (newName) => {_playerName = newName};
 
         return {
             getName,
             getPlayerToken,
             setPlayerToken,
             winGame,
-            getRecord,
             setName
         };
     };
 
     const Players = (function() {
-        const _playerList = [player("Player1", TOKENS.CROSS), player("Player2", TOKENS.NAUGHT)];
+        const _playerList = [player("Player 1", TOKENS.CROSS), player("Player 2", TOKENS.NAUGHT)];
         const getPlayerOne = () => _playerList[0];
         const getPlayerTwo = () => _playerList[1];
         const setPlayerTokens = (playerOneToken, playerTwoToken) => {
@@ -311,9 +304,7 @@
             if (gs.getIsGameOver()) {
                 gameStateCopy.gameOver();
             }
-    
 
-    
             return gameStateCopy;
         }
 
@@ -358,11 +349,6 @@
                 const antiDiag = board.getAntiDiags()[antiDiagSum];
                 const mainDiag = board.getMainDiags()[mainDiagSum];
 
-                console.log(antiDiagSum);
-                console.log(mainDiagSum);
-                console.log(antiDiag);
-                console.log(mainDiag);
-        
                 const possibleWinPaths = [row, col, antiDiag, mainDiag];
 
                 let allWinCells = possibleWinPaths.map(arr => findCluster(arr)).flat();
@@ -402,7 +388,6 @@
             const chosenCell = gameStateCopy.getGameBoard().getCell(rowIndex, colIndex);
             const activePlayerName = gameStateCopy.getActivePlayer().getName(); 
             const activePlayerToken = gameStateCopy.getActivePlayer().getPlayerToken();
-            console.log(`${activePlayerName} put an ${activePlayerToken} on square [${rowIndex}, ${colIndex}]`);
             chosenCell.changeToken(activePlayerToken);
         };
 
@@ -411,12 +396,10 @@
                 placeToken(rowIndex, colIndex);
                 const winningCells = getWinningCells(rowIndex, colIndex);
                 if (winningCells) {
-                    console.log(`${gameStateCopy.getActivePlayer().getName()} wins!`);
                     gameStateCopy.setWinningCells(winningCells);
                     gameStateCopy.gameOver();
                 }
                 else if (isGameTied()) {
-                    console.log("Game is tied!");
                     gameStateCopy.gameOver();
                 }
                 else {
@@ -424,7 +407,7 @@
                 }
             }
             else {
-                console.log("Not a valid move.")
+                // do nothing
             }
         };
 
@@ -460,8 +443,16 @@
     const forwardButton = document.querySelector(".forward");
     const toLatestButton = document.querySelector(".to-latest");
 
-    const playerOneNameButton = document.querySelector(".player-one-name");
-    const playerTwoNameButton = document.querySelector(".player-two-name");
+    const playerOneNameButton = document.querySelector(".edit-name-button.player-one");
+    const playerTwoNameButton = document.querySelector(".edit-name-button.player-two");
+
+    const playerOneNameTextField = document.querySelector(".name-text-field.player-one");
+    const playerTwoNameTextField = document.querySelector(".name-text-field.player-two");
+
+
+    const nameSubmitButtons = document.querySelectorAll(".name-submit-button");
+    const playerOneNameSubmitButton = document.querySelector(".name-submit-button.player-one");
+    const playerTwoNameSubmitButton = document.querySelector(".name-submit-button.player-two");
 
 
         const BoardDisplayController = (function() {
@@ -530,7 +521,7 @@
                 const playerTwoName = document.querySelector(".player-two-name");
 
                 playerOneName.textContent = Players.getPlayerOne().getName();
-                playerTwoName.textContent = Players.getPlayerTwo.getName();
+                playerTwoName.textContent = Players.getPlayerTwo().getName();
             };
             const togglePlayerOneNameField = function() {
                 const playerOneNameField = document.querySelector(".player-one-name-field");
@@ -541,29 +532,24 @@
                 playerTwoNameField.classList.toggle("hidden");
             };
             const showWinningPlayer = function() {
-                const playerOneWinIcon = document.querySelector(".player-one-win-icon");
-                const playerTwoWinIcon = document.querySelector(".player-two-win-icon");
+                const resultInfo = document.querySelector(".game-result-info");
                 // a player won
                 if (GameController.getCurrentGame().isGameWon()) {
                     const winningPlayer = GameController.getCurrentGame().getLatestGameState().getActivePlayer();
                     switch (winningPlayer) {
                         case Players.getPlayerOne() : 
-                            playerOneWinIcon.classList.remove("hidden");
-                            playerTwoWinIcon.classList.add("hidden");
+                            resultInfo.textContent = `${Players.getPlayerOne().getName()} wins!`;
                             break;
                         case Players.getPlayerTwo() : 
-                            playerOneWinIcon.classList.add("hidden");
-                            playerTwoWinIcon.classList.remove("hidden");
+                            resultInfo.textContent = `${Players.getPlayerTwo().getName()} wins!`;
                             break;
                     }
                 }
                 else if (GameController.getCurrentGame().isGameTied()) {
-                    const resultInfo = document.querySelector(".game-result-info");
                     resultInfo.textContent = "Game is tied.";
                 }
                 else {
-                    playerOneWinIcon.classList.add("hidden");
-                    playerTwoWinIcon.classList.add("hidden");
+                    resultInfo.textContent = "";
                 }
             };
             const updatePlayersDisplay = function() {
@@ -571,12 +557,19 @@
                 highlightActivePlayer();
                 showWinningPlayer();
             };
+            const updateFormPlayerNames = function() {
+                const playerOneFormName = document.querySelector("#first-player-select .player-one");
+                const playerTwoFormName = document.querySelector("#first-player-select .player-two");
+                playerOneFormName.textContent = Players.getPlayerOne().getName();
+                playerTwoFormName.textContent = Players.getPlayerTwo().getName();
+            };
             return {
                 updatePlayersDisplay,
                 updatePlayerNames,
                 togglePlayerOneNameField,
                 togglePlayerTwoNameField,
                 showWinningPlayer,
+                updateFormPlayerNames,
             };
         })();
 
@@ -703,17 +696,29 @@
         playerTwoNameButton.addEventListener("click", playerButtonAction);
     })();
 
-
-
-   
-
+    const playerNameSubmitListener = (function() {
+        const nameSubmitButtonAction = function(e) {
+            const chosenButton = e.currentTarget;
+            switch (chosenButton) {
+                case playerOneNameSubmitButton :
+                    Players.getPlayerOne().setName(playerOneNameTextField.value);
+                    PlayersDisplayController.togglePlayerOneNameField();
+                    break;
+                case playerTwoNameSubmitButton : 
+                    Players.getPlayerTwo().setName(playerTwoNameTextField.value);
+                    PlayersDisplayController.togglePlayerTwoNameField();
+                    break;
+            }
+            PlayersDisplayController.updatePlayerNames();
+            PlayersDisplayController.updateFormPlayerNames();
+        };
+        for (const button of nameSubmitButtons) {
+            button.addEventListener("click", nameSubmitButtonAction);
+        }
+    })();
 
 // first screen update using default 3x3 board
 updateGameDisplay();
-
-
-
-
 
 const NewGameFormController = (function() {
     const gameOptionsForm = document.querySelector("#game-options-form");

@@ -4,93 +4,96 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Super Tic Tac Toe</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
 <body>
-    <button class="volume-button">Mute</button>
-    <button class="night-mode-button">Night Mode</button>
+
+    <div class="top-toolbar">
+        <div>
+            SUPER TIC-TAC-TOE
+        </div>
+    </div>
+    
     <div class="game-container">
         <div class="players">
             <div class="player-one-card">
                 <div class="player-one-token">
                     X
                 </div>
-                <button type="button" class="player-one-name">
+                <div class="player-one-name">
                     Player 1
+                </div>
+                <button class="button-icon edit-name-button player-one" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7,14.94L13.06,8.88L15.12,10.94L9.06,17H7V14.94M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M16.7,9.35L15.7,10.35L13.65,8.3L14.65,7.3C14.86,7.08 15.21,7.08 15.42,7.3L16.7,8.58C16.92,8.79 16.92,9.14 16.7,9.35M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2" /></svg>
                 </button>
                 <div class="player-one-name-field hidden">
-                        <input type="text" class="name-text-field" id="player-one-name" name="player_one_name" placeholder="Player 1" minlength="1" maxlength="12">
-                        <button type="button" class="name-submit-button" id="player-one-name-submit-button">Submit</button>
+                        <input type="text" class="name-text-field player-one" id="player-one-name" name="player_one_name" placeholder="Player 1" minlength="1" maxlength="10">
+                        <button type="button" class="name-submit-button player-one" id="player-one-name-submit-button">Submit</button>
                         <small></small>
-                </div>
-                <div class="player-one-win-icon hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z" /></svg>
                 </div>
             </div>
             <div class="player-two-card">
                 <div class="player-two-token">
                     O
                 </div>
-                <button type="button" class="player-two-name">
+                <div class="player-two-name">
                     Player 2
+                </div>
+                <button class="button-icon edit-name-button player-two" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7,14.94L13.06,8.88L15.12,10.94L9.06,17H7V14.94M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M16.7,9.35L15.7,10.35L13.65,8.3L14.65,7.3C14.86,7.08 15.21,7.08 15.42,7.3L16.7,8.58C16.92,8.79 16.92,9.14 16.7,9.35M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2" /></svg>
                 </button>
                 <div class="player-two-name-field hidden">
-                        <input type="text" class="name-text-field" id="player-two-name" name="player_two_name" placeholder="Player 2" minlength="1" maxlength="12">
-                        <button type="button" class="name-submit-button" id="player-two-name-submit-button">Submit</button>
+                        <input type="text" class="name-text-field player-two" id="player-two-name" name="player_two_name" placeholder="Player 2" minlength="1" maxlength="12">
+                        <button type="button" class="name-submit-button player-two" id="player-two-name-submit-button">Submit</button>
                         <small></small>
-                </div>
-                <div class="player-two-win-icon hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z" /></svg>
                 </div>
             </div>
         </div>
-        <div class="game-result-info">
-            
-        </div>
+        <div class="game-result-info"></div>
         <div class="board-container">
             <!--JS code creates this-->
         </div>
         <div class="bottom-toolbar">
-            <button class="game-button game-history-button to-start">
-                <svg class="toolbar-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M17,14.3L14.7,12L17,9.7c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-3,3c0,0,0,0,0,0c-0.4,0.4-0.4,1,0,1.4l3,3c0.2,0.2,0.4,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3C17.3,15.3,17.3,14.7,17,14.3z M9.2,12l2.3-2.3c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-3,3c0,0,0,0,0,0c-0.4,0.4-0.4,1,0,1.4l3,3c0.2,0.2,0.4,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4L9.2,12z"/></svg>
+            <button class="game-button disabled-buttongame-history-button to-start">
+                <svg class="button-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M17,14.3L14.7,12L17,9.7c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-3,3c0,0,0,0,0,0c-0.4,0.4-0.4,1,0,1.4l3,3c0.2,0.2,0.4,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3C17.3,15.3,17.3,14.7,17,14.3z M9.2,12l2.3-2.3c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-3,3c0,0,0,0,0,0c-0.4,0.4-0.4,1,0,1.4l3,3c0.2,0.2,0.4,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4L9.2,12z"/></svg>
             </button>
-            <button class="game-button game-history-button back">
-                <svg class="toolbar-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M11.3,12l3.5-3.5c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-4.2,4.2l0,0c-0.4,0.4-0.4,1,0,1.4l4.2,4.2c0.2,0.2,0.4,0.3,0.7,0.3l0,0c0.3,0,0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4L11.3,12z"/></svg>
+            <button class="game-button disabled-button game-history-button back">
+                <svg class="button-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M11.3,12l3.5-3.5c0.4-0.4,0.4-1,0-1.4c-0.4-0.4-1-0.4-1.4,0l-4.2,4.2l0,0c-0.4,0.4-0.4,1,0,1.4l4.2,4.2c0.2,0.2,0.4,0.3,0.7,0.3l0,0c0.3,0,0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4L11.3,12z"/></svg>
             </button>
-            <button class="game-button game-history-button forward">
-                <svg class="toolbar-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M9.9,17.2c-0.6,0-1-0.4-1-1c0-0.3,0.1-0.5,0.3-0.7l3.5-3.5L9.2,8.5c-0.4-0.4-0.4-1,0-1.4c0.4-0.4,1-0.4,1.4,0l4.2,4.2c0.4,0.4,0.4,1,0,1.4c0,0,0,0,0,0l-4.2,4.2C10.4,17.1,10.1,17.2,9.9,17.2z"/></svg>
+            <button class="game-button disabled-button game-history-button forward">
+                <svg class="button-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M9.9,17.2c-0.6,0-1-0.4-1-1c0-0.3,0.1-0.5,0.3-0.7l3.5-3.5L9.2,8.5c-0.4-0.4-0.4-1,0-1.4c0.4-0.4,1-0.4,1.4,0l4.2,4.2c0.4,0.4,0.4,1,0,1.4c0,0,0,0,0,0l-4.2,4.2C10.4,17.1,10.1,17.2,9.9,17.2z"/></svg>
             </button>
-            <button class="game-button game-history-button to-latest">
-                <svg class="toolbar-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M8.5,8.3c-0.4-0.4-1-0.4-1.4,0c-0.4,0.4-0.4,1,0,1.4L9.3,12L7,14.3c-0.2,0.2-0.3,0.4-0.3,0.7c0,0.6,0.4,1,1,1c0.3,0,0.5-0.1,0.7-0.3l3-3c0,0,0,0,0,0c0.4-0.4,0.4-1,0-1.4L8.5,8.3z M17,11.3l-3-3c-0.4-0.4-1-0.4-1.4,0c-0.4,0.4-0.4,1,0,1.4l2.3,2.3l-2.3,2.3c-0.2,0.2-0.3,0.4-0.3,0.7c0,0.6,0.4,1,1,1c0.3,0,0.5-0.1,0.7-0.3l3-3C17.3,12.3,17.3,11.7,17,11.3z"/></svg>
+            <button class="game-button disabled-button game-history-button to-latest">
+                <svg class="button-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24"><path d="M8.5,8.3c-0.4-0.4-1-0.4-1.4,0c-0.4,0.4-0.4,1,0,1.4L9.3,12L7,14.3c-0.2,0.2-0.3,0.4-0.3,0.7c0,0.6,0.4,1,1,1c0.3,0,0.5-0.1,0.7-0.3l3-3c0,0,0,0,0,0c0.4-0.4,0.4-1,0-1.4L8.5,8.3z M17,11.3l-3-3c-0.4-0.4-1-0.4-1.4,0c-0.4,0.4-0.4,1,0,1.4l2.3,2.3l-2.3,2.3c-0.2,0.2-0.3,0.4-0.3,0.7c0,0.6,0.4,1,1,1c0.3,0,0.5-0.1,0.7-0.3l3-3C17.3,12.3,17.3,11.7,17,11.3z"/></svg>
             </button>
-            <div class="new-game-dropdown">
-                <form id="game-options-form">
-                    <div class="field">
-                        <label for="board-size-select">Board Size</label>
-                        <select name="board-size" id="board-size-select">
-                            <option value="3">3 x 3</option>
-                            <option value="5">5 x 5</option>
-                            <option value="7">7 x 7</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="first-player-select">Who plays first?</label>
-                        <select name="first-player" id="first-player-select">
-                            <option value="player-one">Player 1</option>
-                            <option value="player-two">Player 2</option>
-                            <option value="random">Random</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="practice-mode">Practice Mode</label>
-                        <input type="checkbox" id="practice-mode" name="practice-mode" checked="checked">
-                    </div>
-                    <button type="submit" class="new-game-button">New Game</button>
-                </form>
-            </div>
+        </div>
+
+        <div class="new-game-dropdown">
+            <form id="game-options-form">
+                <div class="field">
+                    <label for="board-size-select">Board Size</label>
+                    <select name="board-size" id="board-size-select">
+                        <option value="3">3 x 3 (3 in a row)</option>
+                        <option value="5">5 x 5 (4 in a row)</option>
+                        <option value="7">7 x 7 (5 in a row)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="first-player-select">Who plays first?</label>
+                    <select name="first-player" id="first-player-select">
+                        <option class="player-one" value="player-one">Player 1</option>
+                        <option class="player-two" value="player-two">Player 2</option>
+                        <option value="random">Random</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="practice-mode">Undo/Redo</label>
+                    <input type="checkbox" id="practice-mode" name="practice-mode" checked="checked">
+                </div>
+                <button type="submit" class="new-game-button">New Game</button>
+            </form>
         </div>
     </div>
 </body>
