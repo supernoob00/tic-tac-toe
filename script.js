@@ -737,58 +737,53 @@ const playerNameSubmitListener = (function() {
     }
 })();
 
-// first screen update using default 3x3 board
-updateGameDisplay();
-
 const NewGameFormController = (function() {
-const gameOptionsForm = document.querySelector("#game-options-form");
+    const gameOptionsForm = document.querySelector("#game-options-form");
 
-const formBoardSize = function() {
-    const boardSize = parseInt(gameOptionsForm["board-size"].value);
-    return boardSize;
-};
+    const formBoardSize = function() {
+        const boardSize = parseInt(gameOptionsForm["board-size"].value);
+        return boardSize;
+    };
 
-const formFirstPlayer = function() {
-    const firstPlayerValue = gameOptionsForm["first-player"].value;
-    let firstPlayer;
-    if (firstPlayerValue === "player-one") {
-        firstPlayer = Players.getPlayerOne();
-    }
-    else if (firstPlayerValue === "player-two") {
-        firstPlayer = Players.getPlayerTwo();
-    }
-    else if (firstPlayerValue === "random") {
-        const coinFlip = Math.floor(Math.random() * 2);
-        coinFlip === 0 ? firstPlayer = Players.getPlayerOne() : firstPlayer = Players.getPlayerTwo();
-    }
-    return firstPlayer;
-};
-
-const formPracticeModeEnabled = function() {
-    const practiceModeEnabled = gameOptionsForm["practice-mode"]
-        if (practiceModeEnabled.checked) {
-            GameButtonsDisplayController.enableGameHistoryButtons();
+    const formFirstPlayer = function() {
+        const firstPlayerValue = gameOptionsForm["first-player"].value;
+        let firstPlayer;
+        if (firstPlayerValue === "player-one") {
+            firstPlayer = Players.getPlayerOne();
         }
-        else {
-            GameButtonsDisplayController.disableGameHistoryButtons();
+        else if (firstPlayerValue === "player-two") {
+            firstPlayer = Players.getPlayerTwo();
         }
-};
+        else if (firstPlayerValue === "random") {
+            const coinFlip = Math.floor(Math.random() * 2);
+            coinFlip === 0 ? firstPlayer = Players.getPlayerOne() : firstPlayer = Players.getPlayerTwo();
+        }
+        return firstPlayer;
+    };
 
+    const formPracticeModeEnabled = function() {
+        const practiceModeEnabled = gameOptionsForm["practice-mode"]
+            if (practiceModeEnabled.checked) {
+                GameButtonsDisplayController.enableGameHistoryButtons();
+            }
+            else {
+                GameButtonsDisplayController.disableGameHistoryButtons();
+            }
+    };
 
-const startNewGame = function(e) {
-    e.preventDefault();
-    const boardSize = formBoardSize();
-    const firstPlayer = formFirstPlayer();
-    formPracticeModeEnabled();
-    GameController.startNewGame(boardSize, COUNTS_TO_WIN[`${boardSize}`], firstPlayer);
-    updateGameDisplay();
-}
-
-gameOptionsForm.addEventListener("submit", startNewGame);
-
+    const startNewGame = function(e) {
+        e.preventDefault();
+        const boardSize = formBoardSize();
+        const firstPlayer = formFirstPlayer();
+        formPracticeModeEnabled();
+        GameController.startNewGame(boardSize, COUNTS_TO_WIN[`${boardSize}`], firstPlayer);
+        updateGameDisplay();
+    }
+    gameOptionsForm.addEventListener("submit", startNewGame);
 })();
 
-
+// first screen update using default 3x3 board
+updateGameDisplay();
 
 
 
